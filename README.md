@@ -26,6 +26,7 @@ A beautifully designed, fully self-contained HTML observation log for the **Mess
 - **Object type legend** — colour-coded dot key for all 11 object types
 - **Print-ready** — clean black-on-white print stylesheet, no wasted ink on dark backgrounds
 - **No dependencies** — single HTML file, works entirely offline (except for sky chart links and Google Fonts)
+- **Pocket Sky Atlas** - The PSA field denotes the objects chart number for fast looksups on your Pocket Sky Atals 
 
 ---
 
