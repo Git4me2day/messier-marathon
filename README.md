@@ -52,25 +52,6 @@ images/
   m110.jpg
 ```
 
-To batch-download images from the SEDS Messier catalog:
-
-```bash
-# Linux / macOS with wget
-mkdir -p images && for i in $(seq 1 110); do
-  wget -q --show-progress --tries=3 --timeout=15 \
-    -P images/ "http://www.messier.seds.org/Jpg/m$i.jpg" \
-    || echo "⚠ Failed: m$i.jpg"
-done
-```
-
-```bash
-# macOS without wget (using curl)
-mkdir -p images && for i in $(seq 1 110); do
-  curl -s -o "images/m$i.jpg" "http://www.messier.seds.org/Jpg/m$i.jpg" \
-    && echo "✓ m$i.jpg" || echo "⚠ Failed: m$i.jpg"
-done
-```
-
 If an image is missing, the lightbox shows a graceful placeholder — the log works fine with a partial or empty `images/` folder.
 
 ---
