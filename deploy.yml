@@ -64,8 +64,7 @@ jobs:
       # ── The following are intentionally NOT copied to _site ────────────────
       #   docs/                  internal developer documentation
       #   cheatsheet.html        internal reference — moved to docs/
-      #   generate_charts.py     offline tool, not a web asset
-      #   create_attributions.sh offline tool, not a web asset
+	#   css-cheaqtsheet.md.    internal reference — moved to docs/
       #   README.md              GitHub repo page only, not the website
       #   .gitignore             repo config only
       #   .github/               this workflow, not a web asset

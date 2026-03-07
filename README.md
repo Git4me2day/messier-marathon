@@ -32,7 +32,7 @@ A beautifully designed, fully self-contained HTML observation log for the **Mess
 
 ## Quick Start
 
-1. Download `messier_marathon.html`
+1. Download `index.html`
 2. Open it in any modern browser
 3. Optionally add object images (see [Adding Photos](#adding-photos) below)
 
