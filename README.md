@@ -147,4 +147,4 @@ Tested in current versions of Chrome, Firefox, Safari, and Edge. Requires a brow
 
 ## License
 
-MIT — free to use, share, and modify. Clear skies! 🌌
+MIT — free to use, share, and modify. Clear skies!
