@@ -135,11 +135,13 @@ Tested in current versions of Chrome, Firefox, Safari, and Edge. Requires a brow
 
 ## Acknowledgements
 
+- Many thnaks to Don Machholz (October 7, 1952 - August 9, 2022) for first coming up with the Mesier Marathon
+- Many thnaks to the other groups and individuals who provided images to Wikipedia Messier Objecs and are noted with attribution
 - Object data based on the **Messier Catalog** (Charles Messier, 1771)
 - Marathon search order adapted from standard community observing resources
-- PSA page references: *Pocket Sky Atlas* by Roger Sinnott (Sky & Telescope)
+- PSA page references: *Pocket Sky Atlas* by Roger Sinnott (Sky & Telescope) - Get this now!, It's awesome!
 - Sky chart links: [Stellarium Web](https://stellarium-web.org) and [Sky-Map.org](https://www.sky-map.org)
-- Object photos (optional): [SEDS Messier Catalog](http://www.messier.seds.org)
+- Object photos (non-copyright images): [SEDS Messier Catalog](http://www.messier.seds.org)
 
 ---
 
