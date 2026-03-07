@@ -1,4 +1,4 @@
-# 🔭 Messier Marathon — Observation Log
+#  Messier Marathon — Observation Log
 
 A beautifully designed, fully self-contained HTML observation log for the **Messier Marathon** — the challenge of observing all 110 Messier objects in a single night. Built for use in the field with red night-vision mode, real-time sky chart links, and persistent session tracking.
 
@@ -81,8 +81,8 @@ Each object's lightbox sidebar contains two live sky chart buttons:
 
 | Button | Service | How it works |
 |--------|---------|--------------|
-| 🔭 Stellarium Web | [stellarium-web.org](https://stellarium-web.org) | Deep-links by Messier name (e.g. `/skysource/M42`). Opens a real-time 3D sky simulation centred on the object. Set your location and date/time for an accurate view. |
-| 🗺 Sky-Map.org | [sky-map.org](https://www.sky-map.org) | Deep-links by precise RA/Dec coordinates converted from the catalog data. Opens with constellation lines, grid, and a position indicator pre-enabled. |
+| Stellarium Web | [stellarium-web.org](https://stellarium-web.org) | Deep-links by Messier name (e.g. `/skysource/M42`). Opens a real-time 3D sky simulation centred on the object. Set your location and date/time for an accurate view. |
+| Sky-Map.org | [sky-map.org](https://www.sky-map.org) | Deep-links by precise RA/Dec coordinates converted from the catalog data. Opens with constellation lines, grid, and a position indicator pre-enabled. |
 
 ---
 
