@@ -111,8 +111,6 @@ Currently all data is local to one browser. A future option could allow export/i
 ├── faq.html                ← Frequently asked questions
 ├── mm-shared.css           ← Shared design system stylesheet
 ├── README.md               ← GitHub repo overview and setup instructions
-├── create_attributions.sh  ← Shell script to generate SEDS attribution text files
-├── generate_charts.py      ← Optional offline finder chart generator (matplotlib)
 ├── .gitignore
 ├── fonts/                  ← Self-hosted typefaces (not tracked in git)
 │   ├── Cinzel-Regular.ttf
@@ -138,8 +136,6 @@ Currently all data is local to one browser. A future option could allow export/i
 ├── faq.html
 ├── mm-shared.css
 ├── README.md
-├── create_attributions.sh
-├── generate_charts.py
 ├── .gitignore
 ├── fonts/
 ├── images/
@@ -154,4 +150,4 @@ Currently all data is local to one browser. A future option could allow export/i
 
 ---
 
-*Last updated: March 2026*
+*Last updated: 07 March 2026*
