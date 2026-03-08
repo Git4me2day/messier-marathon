@@ -1425,6 +1425,10 @@ tr.checked td.col-m-val a.m-link {
           <span class="log-menu-icon">⬆</span> Import AL Records
         </label>
         <hr class="log-menu-divider">
+        <button class="log-menu-item" id="menuSession">
+          <span class="log-menu-icon">⚙</span> Session Setup…
+        </button>
+        <hr class="log-menu-divider">
         <button class="log-menu-item danger" id="menuReset">
           <span class="log-menu-icon">↺</span> Reset All Data…
         </button>
@@ -1432,6 +1436,9 @@ tr.checked td.col-m-val a.m-link {
     </div>
     <input type="file" id="btnImportFile"   class="btn-import-input" accept=".csv">
     <input type="file" id="btnImportALFile" class="btn-import-input" accept=".json">
+    <div class="session-indicator" id="sessionIndicator">
+      <span class="session-dot"></span> Session active
+    </div>
   </div>
 
   <!-- TABLE -->
@@ -1596,6 +1603,242 @@ tr.checked td.col-m-val a.m-link {
       <button class="import-btn cancel" id="importCancelBtn">Cancel</button>
       <button class="import-btn" id="importMergeBtn">Merge — keep existing where file is blank</button>
       <button class="import-btn primary" id="importOverwriteBtn">Overwrite — replace all with file data</button>
+    </div>
+  </div>
+</div>
+
+<!-- SESSION SETUP MODAL -->
+<style>
+/* ── Session indicator pill ── */
+.session-indicator {
+  display: none;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: var(--red-mid);
+  border: 1px solid var(--red-dim);
+  padding: 3px 9px;
+  white-space: nowrap;
+  align-items: center;
+  gap: 5px;
+  transition: all .3s;
+}
+.session-indicator.active { display: flex; }
+.session-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--red-mid);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%,100% { opacity: 1; }
+  50%      { opacity: .3; }
+}
+
+/* ── Session modal reuses rec-modal design language ── */
+.sess-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--modal-overlay);
+  z-index: 3500;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+}
+.sess-overlay.open { display: flex; }
+.sess-box {
+  background: var(--modal-bg);
+  border: 1px solid var(--modal-border);
+  width: 100%;
+  max-width: 620px;
+  padding: 28px 28px 24px;
+  position: relative;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.sess-title {
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--red-bright);
+  margin-bottom: 6px;
+}
+.sess-subtitle {
+  font-family: 'Crimson Pro', serif;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-bottom: 22px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border2);
+}
+.sess-close {
+  position: absolute;
+  top: 16px; right: 16px;
+  width: 30px; height: 30px;
+  background: transparent;
+  border: 1px solid var(--border2);
+  color: var(--text-meta);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+}
+.sess-close:hover { background: var(--modal-close-hover); border-color: var(--border3); color: var(--red-bright); }
+
+/* Location row with geo button */
+.sess-loc-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+.sess-loc-row .rec-input { flex: 1; }
+.sess-geo-btn {
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid var(--border3);
+  color: var(--text-sub);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: .12em;
+  padding: 6px 12px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all .2s;
+  white-space: nowrap;
+  height: 33px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sess-geo-btn:hover { background: var(--filter-active-bg); color: var(--red-bright); }
+.sess-geo-btn:disabled { opacity: .4; cursor: default; }
+.sess-geo-status {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-top: 4px;
+  min-height: 14px;
+  transition: color .3s;
+}
+.sess-geo-status.ok  { color: var(--red-mid); }
+.sess-geo-status.err { color: #a05030; }
+
+.sess-coords {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-top: 3px;
+  letter-spacing: .08em;
+}
+
+/* Footer buttons reuse rec styles */
+.sess-footer {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border2);
+  flex-wrap: wrap;
+}
+.sess-clear-btn {
+  background: transparent;
+  border: 1px solid var(--border2);
+  color: var(--text-dim);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: .18em;
+  padding: 7px 16px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all .2s;
+  margin-right: auto;
+}
+.sess-clear-btn:hover { border-color: var(--border3); color: var(--red-bright); background: var(--filter-active-bg); }
+</style>
+
+<div class="sess-overlay" id="sessOverlay" role="dialog" aria-modal="true" aria-label="Session setup">
+  <div class="sess-box">
+    <div class="sess-title">⚙ Session Setup</div>
+    <div class="sess-subtitle">
+      These defaults auto-fill blank fields in every observation record opened this session.
+      Existing saved data is never overwritten — session values only fill gaps.
+    </div>
+    <button class="sess-close" id="sessClose" aria-label="Close">✕</button>
+
+    <div class="rec-section">Location</div>
+    <div class="rec-field">
+      <label class="rec-label">Observing Site</label>
+      <div class="sess-loc-row">
+        <input class="rec-input" type="text" id="sessSite"
+               placeholder="e.g. Jordan Lake SRA, NC — Bortle 4">
+        <button class="sess-geo-btn" id="sessGeoBtn" title="Get location from device">
+          📍 Locate
+        </button>
+      </div>
+      <div class="sess-geo-status" id="sessGeoStatus"></div>
+      <div class="sess-coords"    id="sessCoords"></div>
+    </div>
+
+    <div class="rec-section">Sky Conditions</div>
+    <div class="rec-grid-3">
+      <div class="rec-field">
+        <label class="rec-label">Seeing (Antoniadi)</label>
+        <select class="rec-select" id="sessSeeing">
+          <option value="">— leave blank —</option>
+          <option value="1">1 · Perfect</option>
+          <option value="2">2 · Slight undulations</option>
+          <option value="3">3 · Moderate</option>
+          <option value="4">4 · Poor</option>
+          <option value="5">5 · Very bad</option>
+        </select>
+      </div>
+      <div class="rec-field">
+        <label class="rec-label">Transparency</label>
+        <select class="rec-select" id="sessTransparency">
+          <option value="">— leave blank —</option>
+          <option value="5">5 · Excellent</option>
+          <option value="4">4 · Good</option>
+          <option value="3">3 · Average</option>
+          <option value="2">2 · Poor</option>
+          <option value="1">1 · Very poor</option>
+        </select>
+      </div>
+      <div class="rec-field">
+        <label class="rec-label">Limiting Magnitude</label>
+        <input class="rec-input" type="text" id="sessLimitMag" placeholder="e.g. 6.3">
+      </div>
+    </div>
+
+    <div class="rec-section">Equipment</div>
+    <div class="rec-grid">
+      <div class="rec-field">
+        <label class="rec-label">Telescope / Instrument</label>
+        <input class="rec-input" type="text" id="sessScope"
+               placeholder="e.g. 8″ Dobsonian f/6">
+      </div>
+      <div class="rec-field">
+        <label class="rec-label">Aperture (mm)</label>
+        <input class="rec-input" type="text" id="sessAperture" placeholder="e.g. 203">
+      </div>
+      <div class="rec-field">
+        <label class="rec-label">Eyepiece</label>
+        <input class="rec-input" type="text" id="sessEyepiece"
+               placeholder="e.g. 24mm Panoptic">
+      </div>
+      <div class="rec-field">
+        <label class="rec-label">Magnification (×)</label>
+        <input class="rec-input" type="text" id="sessMag" placeholder="e.g. 50×">
+      </div>
+    </div>
+
+    <div class="sess-footer">
+      <button class="sess-clear-btn" id="sessClearBtn">↺ Clear Session</button>
+      <button class="rec-cancel-btn" id="sessCancelBtn">Cancel</button>
+      <button class="rec-save-btn"   id="sessSaveBtn">Save Session</button>
     </div>
   </div>
 </div>
@@ -1993,17 +2236,18 @@ function openRecModal(id, m, type) {
   document.getElementById("recTitleM").textContent    = m;
   document.getElementById("recTitleType").textContent = type;
 
-  // Populate fields from saved data, or blank
+  // Populate fields from saved data, then fall back to session defaults for blank fields
+  const sess = SESSION;
   document.getElementById("recDate").value         = saved.date         || "";
   document.getElementById("recTime").value         = saved.time         || "";
-  document.getElementById("recSite").value         = saved.site         || "";
-  document.getElementById("recSeeing").value       = saved.seeing       || "";
-  document.getElementById("recTransparency").value = saved.transparency || "";
-  document.getElementById("recLimitMag").value     = saved.limitMag     || "";
-  document.getElementById("recScope").value        = saved.scope        || "";
-  document.getElementById("recAperture").value     = saved.aperture     || "";
-  document.getElementById("recEyepiece").value     = saved.eyepiece     || "";
-  document.getElementById("recMag").value          = saved.mag          || "";
+  document.getElementById("recSite").value         = saved.site         || sess.site         || "";
+  document.getElementById("recSeeing").value       = saved.seeing       || sess.seeing       || "";
+  document.getElementById("recTransparency").value = saved.transparency || sess.transparency || "";
+  document.getElementById("recLimitMag").value     = saved.limitMag     || sess.limitMag     || "";
+  document.getElementById("recScope").value        = saved.scope        || sess.scope        || "";
+  document.getElementById("recAperture").value     = saved.aperture     || sess.aperture     || "";
+  document.getElementById("recEyepiece").value     = saved.eyepiece     || sess.eyepiece     || "";
+  document.getElementById("recMag").value          = saved.mag          || sess.mag          || "";
   document.getElementById("recSketch").value       = saved.sketch       || "";
 
   // Pre-populate description from brief notes if full record is empty
@@ -2539,6 +2783,162 @@ document.getElementById("btnImportALFile").addEventListener("change", function (
   };
   reader.readAsText(file);
 });
+
+/* ── SESSION SETUP ──────────────────────────────────────────────── */
+const SESSION_FIELDS = ["site","seeing","transparency","limitMag","scope","aperture","eyepiece","mag"];
+let SESSION = {};
+
+function loadSession() {
+  try {
+    const s = localStorage.getItem("mm_session");
+    if (s) SESSION = JSON.parse(s);
+  } catch(e) {}
+}
+
+function saveSession() {
+  try { localStorage.setItem("mm_session", JSON.stringify(SESSION)); } catch(e) {}
+}
+
+function sessionIsActive() {
+  return SESSION_FIELDS.some(k => SESSION[k] && String(SESSION[k]).trim());
+}
+
+function updateSessionIndicator() {
+  document.getElementById("sessionIndicator")
+    .classList.toggle("active", sessionIsActive());
+}
+
+function openSessionModal() {
+  document.getElementById("sessSite").value         = SESSION.site         || "";
+  document.getElementById("sessSeeing").value       = SESSION.seeing       || "";
+  document.getElementById("sessTransparency").value = SESSION.transparency || "";
+  document.getElementById("sessLimitMag").value     = SESSION.limitMag     || "";
+  document.getElementById("sessScope").value        = SESSION.scope        || "";
+  document.getElementById("sessAperture").value     = SESSION.aperture     || "";
+  document.getElementById("sessEyepiece").value     = SESSION.eyepiece     || "";
+  document.getElementById("sessMag").value          = SESSION.mag          || "";
+
+  const coordEl = document.getElementById("sessCoords");
+  const statEl  = document.getElementById("sessGeoStatus");
+  if (SESSION.lat && SESSION.lon) {
+    coordEl.textContent = `${SESSION.lat.toFixed(5)}°, ${SESSION.lon.toFixed(5)}°`;
+    statEl.textContent  = "Location previously obtained from device.";
+    statEl.className    = "sess-geo-status ok";
+  } else {
+    coordEl.textContent = "";
+    statEl.textContent  = "";
+    statEl.className    = "sess-geo-status";
+  }
+
+  document.getElementById("sessOverlay").classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+
+function closeSessionModal() {
+  document.getElementById("sessOverlay").classList.remove("open");
+  document.body.style.overflow = "";
+}
+
+function saveSessionModal() {
+  SESSION = {
+    site:         document.getElementById("sessSite").value.trim(),
+    seeing:       document.getElementById("sessSeeing").value,
+    transparency: document.getElementById("sessTransparency").value,
+    limitMag:     document.getElementById("sessLimitMag").value.trim(),
+    scope:        document.getElementById("sessScope").value.trim(),
+    aperture:     document.getElementById("sessAperture").value.trim(),
+    eyepiece:     document.getElementById("sessEyepiece").value.trim(),
+    mag:          document.getElementById("sessMag").value.trim(),
+    lat: SESSION.lat || null,
+    lon: SESSION.lon || null,
+  };
+  saveSession();
+  updateSessionIndicator();
+  closeSessionModal();
+}
+
+document.getElementById("sessGeoBtn").addEventListener("click", function () {
+  const btn     = this;
+  const statEl  = document.getElementById("sessGeoStatus");
+  const coordEl = document.getElementById("sessCoords");
+  const siteEl  = document.getElementById("sessSite");
+
+  if (!navigator.geolocation) {
+    statEl.textContent = "Geolocation is not supported by this browser.";
+    statEl.className   = "sess-geo-status err";
+    return;
+  }
+
+  btn.disabled        = true;
+  statEl.textContent  = "Requesting location…";
+  statEl.className    = "sess-geo-status";
+  coordEl.textContent = "";
+
+  navigator.geolocation.getCurrentPosition(
+    function (pos) {
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+      SESSION.lat = lat;
+      SESSION.lon = lon;
+      coordEl.textContent = `${lat.toFixed(5)}°, ${lon.toFixed(5)}°`;
+      statEl.textContent  = "Got coordinates — looking up place name…";
+      statEl.className    = "sess-geo-status ok";
+
+      fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`)
+        .then(r => r.json())
+        .then(data => {
+          const addr  = data.address || {};
+          const parts = [
+            addr.city || addr.town || addr.village || addr.hamlet || addr.county,
+            addr.state,
+            addr.country_code ? addr.country_code.toUpperCase() : null
+          ].filter(Boolean);
+          const placeName = parts.join(", ");
+          if (placeName && !siteEl.value) siteEl.value = placeName;
+          statEl.textContent = placeName
+            ? `Location found: ${placeName}`
+            : "Coordinates obtained — place name lookup returned no result.";
+          btn.disabled = false;
+        })
+        .catch(() => {
+          statEl.textContent = "Coordinates obtained. Place name lookup failed (no network?).";
+          statEl.className   = "sess-geo-status err";
+          btn.disabled = false;
+        });
+    },
+    function (err) {
+      const msgs = {
+        1: "Permission denied — allow location access in your browser settings.",
+        2: "Position unavailable — device could not determine location.",
+        3: "Timed out waiting for location."
+      };
+      statEl.textContent = msgs[err.code] || "Could not get location.";
+      statEl.className   = "sess-geo-status err";
+      btn.disabled = false;
+    },
+    { timeout: 12000, maximumAge: 60000 }
+  );
+});
+
+document.getElementById("menuSession").addEventListener("click", function () {
+  logMenuDropdown.classList.remove("open");
+  logMenuBtn.classList.remove("open");
+  openSessionModal();
+});
+document.getElementById("sessClose").addEventListener("click",     closeSessionModal);
+document.getElementById("sessCancelBtn").addEventListener("click", closeSessionModal);
+document.getElementById("sessSaveBtn").addEventListener("click",   saveSessionModal);
+document.getElementById("sessOverlay").addEventListener("click", function(e) {
+  if (e.target === this) closeSessionModal();
+});
+document.getElementById("sessClearBtn").addEventListener("click", function () {
+  if (!confirm("Clear all session defaults?\n\nThis will not affect any saved observation records.")) return;
+  SESSION = {};
+  saveSession();
+  updateSessionIndicator();
+  closeSessionModal();
+});
+
 const logMenuBtn      = document.getElementById("btnLogMenu");
 const logMenuDropdown = document.getElementById("logMenuDropdown");
 
@@ -2610,9 +3010,11 @@ toggleEl.addEventListener("keydown", e => { if (e.key==="Enter"||e.key===" ") to
 
 /* INIT */
 loadState();
+loadSession();
 try { const t = localStorage.getItem("mm_theme"); if (t) setTheme(t); } catch(e) {}
 renderTable();
 updateProgress();
+updateSessionIndicator();
 </script>
 </body>
 </html>
