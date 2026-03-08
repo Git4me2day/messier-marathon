@@ -122,7 +122,7 @@ Tested in current versions of Chrome, Firefox, Safari, and Edge. Requires a brow
 - Object data based on the **Messier Catalog** (Charles Messier, 1771)
 - Marathon search order adapted from standard community observing resources
 - PSA page references: *Pocket Sky Atlas* by Roger Sinnott (Sky & Telescope) - Get this now!, It's awesome!
-- Sky chart links: [Stellarium Web](https://stellarium-web.org) and [Sky-Map.org](https://www.sky-map.org)
+- Sky chart links: [Stellarium Web](https://stellarium-web.org) and [freestarcharts.com](https://freestarcharts.com)
 - Object photos (non-copyright images): [SEDS Messier Catalog](http://www.messier.seds.org)
 
 ---

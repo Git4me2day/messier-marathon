@@ -1250,12 +1250,12 @@ tr.checked td.col-m-val a.m-link {
         </div>
         <div class="lb-stat-divider"></div>
         <div class="lb-sky-links">
-          <span class="lb-sky-links-label">Live Sky Charts</span>
+          <span class="lb-sky-links-label">Sky Charts</span>
+          <a class="lb-sky-btn" id="lbLocalChart" href="#" target="_blank" rel="noopener">
+            <span class="sky-icon">🗺</span>Finder Chart
+          </a>
           <a class="lb-sky-btn" id="lbStellarium" href="#" target="_blank" rel="noopener">
             <span class="sky-icon">🔭</span>Stellarium Web
-          </a>
-          <a class="lb-sky-btn" id="lbSkyMap" href="#" target="_blank" rel="noopener">
-            <span class="sky-icon">🗺</span>Sky-Map.org
           </a>
         </div>
       </div>
@@ -1502,12 +1502,10 @@ function buildStellariumURL(m) {
   return `https://stellarium-web.org/skysource/${id}`;
 }
 
-function buildSkyMapURL(ra, dec) {
-  const raD  = raToDecimal(ra);
-  const decD = decToDecimal(dec);
-  return `https://www.sky-map.org/?ra=${raD.toFixed(4)}&de=${decD.toFixed(4)}&zoom=8` +
-         `&show_grid=1&show_constellation_lines=1&show_constellation_boundaries=0` +
-         `&show_const_names=1&show_galaxies=1&show_position_indicator=1`;
+function buildLocalChartURL(m) {
+  // Local finder chart — charts/M1.png, M2.png, etc.
+  const id = m.replace(/\s/g, '');   // "M1", "M110", etc.
+  return `charts/${id}.png`;
 }
 
 function populateLightbox(idx) {
@@ -1530,8 +1528,8 @@ function populateLightbox(idx) {
   document.getElementById("lbSidePSA").textContent  = psa;
 
   // Sky chart links
-  document.getElementById("lbStellarium").href = buildStellariumURL(m);
-  document.getElementById("lbSkyMap").href      = buildSkyMapURL(ra, dec);
+  document.getElementById("lbLocalChart").href = buildLocalChartURL(m);
+  document.getElementById("lbStellarium").href  = buildStellariumURL(m);
 
   // Position indicator
   document.getElementById("lbPos").textContent = `${idx + 1} / ${DATA.length}`;
