@@ -497,6 +497,24 @@ tr.checked td.col-m-val a.m-link { text-decoration: line-through; text-decoratio
 }
 .btn-print:hover { background: var(--filter-active-bg); }
 
+.btn-export, .btn-import-label {
+  background: transparent;
+  border: 1px solid var(--border3);
+  color: var(--red-bright);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: .2em;
+  padding: 5px 16px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all .2s;
+  white-space: nowrap;
+  display: inline-block;
+  line-height: 1.8;
+}
+.btn-export:hover, .btn-import-label:hover { background: var(--filter-active-bg); }
+.btn-import-input { display: none; }
+
 /* ════════ TABLE ════════ */
 .table-outer {
   border: 1px solid var(--border2);
@@ -1079,7 +1097,7 @@ tr.checked td.col-m-val a.m-link {
 @media print {
   body { background: #fff !important; color: #000 !important; }
   body::before { display: none; }
-  .controls, .btn-print, .theme-toggle-wrap { display: none; }
+  .controls, .btn-print, .btn-export, .btn-import-label, .theme-toggle-wrap { display: none; }
   .table-outer, .legend { border-color: #bbb; background: #fff; }
   th { background: #eee !important; color: #333; border-color: #ccc; }
   td { color: #111; border-color: #ddd; }
@@ -1136,6 +1154,9 @@ tr.checked td.col-m-val a.m-link {
       <input type="text" id="searchInput" placeholder="Search M#, type, con…">
     </div>
     <button class="btn-print" onclick="window.print()">⎙ Print</button>
+    <button class="btn-export" id="btnExport">⬇ Export</button>
+    <label class="btn-import-label" for="btnImportFile">⬆ Import</label>
+    <input type="file" id="btnImportFile" class="btn-import-input" accept=".csv">
   </div>
 
   <!-- TABLE -->
@@ -1622,6 +1643,86 @@ document.querySelectorAll(".filter-btn").forEach(btn => btn.addEventListener("cl
 }));
 document.getElementById("searchInput").addEventListener("input", function() {
   searchTerm = this.value.trim().toLowerCase(); applyFilter();
+});
+
+/* ── EXPORT ─────────────────────────────────────────────────────── */
+document.getElementById("btnExport").addEventListener("click", function () {
+
+  // Build timestamp: YYYY-MM-DD-HHmmss
+  const now = new Date();
+  const pad = n => String(n).padStart(2, "0");
+  const stamp = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`
+              + `-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  const filename = `${stamp}-observing-log.csv`;
+
+  // CSV header
+  const cols = ["Marathon Order","Object","Type","Constellation","Magnitude",
+                 "RA (J2000)","Dec (J2000)","PSA Page","Observed","Field Notes"];
+  const rows = [cols.map(c => `"${c}"`).join(",")];
+
+  // One row per object
+  DATA.forEach(([mo, m, type, con, mag, ra, dec, psa]) => {
+    const observed  = SAVED_CHECKS[m] ? "Yes" : "No";
+    const notes     = (SAVED_NOTES[m] || "").replace(/"/g, '""'); // escape quotes
+    rows.push([mo, m, type, con, mag, ra, dec, psa, observed, `"${notes}"`].join(","));
+  });
+
+  const csv  = rows.join("\r\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href     = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+/* ── IMPORT ─────────────────────────────────────────────────────── */
+document.getElementById("btnImportFile").addEventListener("change", function (e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function (evt) {
+    const lines = evt.target.result.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length < 2) { alert("That doesn't look like a valid observing log CSV."); return; }
+
+    let imported = 0, skipped = 0;
+    // Skip header row (index 0), parse from index 1
+    for (let i = 1; i < lines.length; i++) {
+      // Split respecting quoted fields
+      const cols = lines[i].match(/(".*?"|[^,]+|(?<=,)(?=,)|^(?=,)|(?<=,)$)/g) || [];
+      const clean = cols.map(c => c.replace(/^"|"$/g, "").replace(/""/g, '"').trim());
+
+      // Expected column order: mo, m, type, con, mag, ra, dec, psa, observed, notes
+      const m        = clean[1];
+      const observed = clean[8];
+      const notes    = clean[9] || "";
+
+      if (!m || !m.match(/^M\d+$/i)) { skipped++; continue; }
+
+      SAVED_CHECKS[m] = (observed.toLowerCase() === "yes");
+      SAVED_NOTES[m]  = notes;
+      imported++;
+    }
+
+    // Persist and refresh UI
+    try {
+      localStorage.setItem("mm_checks", JSON.stringify(SAVED_CHECKS));
+      localStorage.setItem("mm_notes",  JSON.stringify(SAVED_NOTES));
+    } catch(err) {}
+
+    renderTable();
+    updateProgress();
+    applyFilter();
+
+    alert(`Import complete — ${imported} objects loaded${skipped ? `, ${skipped} rows skipped` : ""}.`);
+    // Reset file input so the same file can be re-imported if needed
+    e.target.value = "";
+  };
+  reader.readAsText(file);
 });
 
 /* THEME */
