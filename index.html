@@ -1646,6 +1646,34 @@ document.getElementById("searchInput").addEventListener("input", function() {
 });
 
 /* ── EXPORT ─────────────────────────────────────────────────────── */
+// ── CSV helpers ─────────────────────────────────────────────────────
+// Quote a single field: wrap in quotes, escape any internal quotes as ""
+function csvField(val) {
+  const s = String(val === null || val === undefined ? "" : val);
+  return `"${s.replace(/"/g, '""')}"`;
+}
+
+// Parse one CSV line into an array of strings, respecting quoted fields
+function parseCSVLine(line) {
+  const fields = [];
+  let cur = "", inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQ) {
+      if (ch === '"' && line[i+1] === '"') { cur += '"'; i++; }   // escaped ""
+      else if (ch === '"')                 { inQ = false; }        // closing quote
+      else                                 { cur += ch; }
+    } else {
+      if      (ch === '"') { inQ = true; }
+      else if (ch === ',') { fields.push(cur); cur = ""; }
+      else                 { cur += ch; }
+    }
+  }
+  fields.push(cur);
+  return fields;
+}
+
+/* ── EXPORT ─────────────────────────────────────────────────────── */
 document.getElementById("btnExport").addEventListener("click", function () {
 
   // Build timestamp: YYYY-MM-DD-HHmmss
@@ -1655,16 +1683,17 @@ document.getElementById("btnExport").addEventListener("click", function () {
               + `-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
   const filename = `${stamp}-observing-log.csv`;
 
-  // CSV header
-  const cols = ["Marathon Order","Object","Type","Constellation","Magnitude",
-                 "RA (J2000)","Dec (J2000)","PSA Page","Observed","Field Notes"];
-  const rows = [cols.map(c => `"${c}"`).join(",")];
+  // CSV header — all fields quoted
+  const header = ["Marathon Order","Object","Type","Constellation","Magnitude",
+                  "RA (J2000)","Dec (J2000)","PSA Page","Observed","Field Notes"]
+                  .map(csvField).join(",");
+  const rows = [header];
 
-  // One row per object
+  // One row per object — every field quoted so commas inside PSA pages are safe
   DATA.forEach(([mo, m, type, con, mag, ra, dec, psa]) => {
-    const observed  = SAVED_CHECKS[m] ? "Yes" : "No";
-    const notes     = (SAVED_NOTES[m] || "").replace(/"/g, '""'); // escape quotes
-    rows.push([mo, m, type, con, mag, ra, dec, psa, observed, `"${notes}"`].join(","));
+    const observed = SAVED_CHECKS[m] ? "Yes" : "No";
+    const notes    = SAVED_NOTES[m] || "";
+    rows.push([mo, m, type, con, mag, ra, dec, psa, observed, notes].map(csvField).join(","));
   });
 
   const csv  = rows.join("\r\n");
@@ -1690,18 +1719,26 @@ document.getElementById("btnImportFile").addEventListener("change", function (e)
     if (lines.length < 2) { alert("That doesn't look like a valid observing log CSV."); return; }
 
     let imported = 0, skipped = 0;
-    // Skip header row (index 0), parse from index 1
+
+    // Read header row to find column positions by name (future-proof)
+    const headers = parseCSVLine(lines[0]).map(h => h.trim().toLowerCase());
+    const iObj      = headers.indexOf("object");
+    const iObserved = headers.indexOf("observed");
+    const iNotes    = headers.indexOf("field notes");
+
+    if (iObj === -1 || iObserved === -1) {
+      alert("CSV header not recognised — make sure you're importing an observing log exported from this page.");
+      e.target.value = "";
+      return;
+    }
+
     for (let i = 1; i < lines.length; i++) {
-      // Split respecting quoted fields
-      const cols = lines[i].match(/(".*?"|[^,]+|(?<=,)(?=,)|^(?=,)|(?<=,)$)/g) || [];
-      const clean = cols.map(c => c.replace(/^"|"$/g, "").replace(/""/g, '"').trim());
+      const cols = parseCSVLine(lines[i]);
+      const m        = (cols[iObj]      || "").trim();
+      const observed = (cols[iObserved] || "").trim();
+      const notes    = iNotes >= 0 ? (cols[iNotes] || "").trim() : "";
 
-      // Expected column order: mo, m, type, con, mag, ra, dec, psa, observed, notes
-      const m        = clean[1];
-      const observed = clean[8];
-      const notes    = clean[9] || "";
-
-      if (!m || !m.match(/^M\d+$/i)) { skipped++; continue; }
+      if (!m.match(/^M\d+$/i)) { skipped++; continue; }
 
       SAVED_CHECKS[m] = (observed.toLowerCase() === "yes");
       SAVED_NOTES[m]  = notes;
@@ -1719,7 +1756,6 @@ document.getElementById("btnImportFile").addEventListener("change", function (e)
     applyFilter();
 
     alert(`Import complete — ${imported} objects loaded${skipped ? `, ${skipped} rows skipped` : ""}.`);
-    // Reset file input so the same file can be re-imported if needed
     e.target.value = "";
   };
   reader.readAsText(file);
