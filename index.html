@@ -133,20 +133,6 @@
   transform: translateY(-50%);
   color: var(--text-dim); font-size: 12px; pointer-events: none;
 }
-.btn-print {
-  background: transparent;
-  border: 1px solid var(--border3);
-  color: var(--red-bright);
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 10px;
-  letter-spacing: .2em;
-  padding: 5px 16px;
-  cursor: pointer;
-  text-transform: uppercase;
-  transition: all .2s;
-}
-.btn-print:hover { background: var(--filter-active-bg); }
-
 /* ════════ TABLE ════════ */
 .table-outer {
   border: 1px solid var(--border2);
@@ -514,6 +500,71 @@ tr.checked td.col-m-val a.m-link { text-decoration: line-through; text-decoratio
 }
 .btn-export:hover, .btn-import-label:hover { background: var(--filter-active-bg); }
 .btn-import-input { display: none; }
+
+/* ════════ LOG MENU DROPDOWN ════════ */
+.log-menu-wrap {
+  position: relative;
+}
+.btn-log-menu {
+  background: transparent;
+  border: 1px solid var(--border3);
+  color: var(--red-bright);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: .2em;
+  padding: 5px 14px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all .2s;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.btn-log-menu:hover, .btn-log-menu.open { background: var(--filter-active-bg); }
+.btn-log-menu-caret { font-size: 8px; opacity: .7; transition: transform .2s; }
+.btn-log-menu.open .btn-log-menu-caret { transform: rotate(180deg); }
+.log-menu-dropdown {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  background: var(--modal-bg);
+  border: 1px solid var(--border3);
+  min-width: 210px;
+  z-index: 500;
+  flex-direction: column;
+}
+.log-menu-dropdown.open { display: flex; }
+.log-menu-item {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-sub);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: .16em;
+  padding: 10px 16px;
+  cursor: pointer;
+  text-transform: uppercase;
+  text-align: left;
+  transition: background .15s, color .15s;
+  white-space: nowrap;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.log-menu-item:last-child { border-bottom: none; }
+.log-menu-item:hover { background: var(--filter-active-bg); color: var(--red-bright); }
+.log-menu-item.danger { color: var(--text-dim); }
+.log-menu-item.danger:hover { color: var(--red-bright); }
+.log-menu-icon { font-size: 12px; opacity: .8; }
+.log-menu-divider {
+  border: none;
+  border-top: 1px solid var(--border2);
+  margin: 0;
+}
 
 /* ════════ TABLE ════════ */
 .table-outer {
@@ -1097,7 +1148,7 @@ tr.checked td.col-m-val a.m-link {
 @media print {
   body { background: #fff !important; color: #000 !important; }
   body::before { display: none; }
-  .controls, .btn-print, .btn-export, .btn-import-label, .theme-toggle-wrap { display: none; }
+  .controls, .log-menu-wrap, .btn-import-input, .theme-toggle-wrap { display: none; }
   .table-outer, .legend { border-color: #bbb; background: #fff; }
   th { background: #eee !important; color: #333; border-color: #ccc; }
   td { color: #111; border-color: #ddd; }
@@ -1153,9 +1204,26 @@ tr.checked td.col-m-val a.m-link {
       <span class="search-icon">⌕</span>
       <input type="text" id="searchInput" placeholder="Search M#, type, con…">
     </div>
-    <button class="btn-print" onclick="window.print()">⎙ Print</button>
-    <button class="btn-export" id="btnExport">⬇ Export</button>
-    <label class="btn-import-label" for="btnImportFile">⬆ Import</label>
+    <div class="log-menu-wrap">
+      <button class="btn-log-menu" id="btnLogMenu">
+        ☰ Log <span class="btn-log-menu-caret">▼</span>
+      </button>
+      <div class="log-menu-dropdown" id="logMenuDropdown">
+        <button class="log-menu-item" id="menuPrint">
+          <span class="log-menu-icon">⎙</span> Print
+        </button>
+        <button class="log-menu-item" id="menuExport">
+          <span class="log-menu-icon">⬇</span> Export CSV
+        </button>
+        <label class="log-menu-item" for="btnImportFile">
+          <span class="log-menu-icon">⬆</span> Import CSV
+        </label>
+        <hr class="log-menu-divider">
+        <button class="log-menu-item danger" id="menuReset">
+          <span class="log-menu-icon">↺</span> Reset All Data…
+        </button>
+      </div>
+    </div>
     <input type="file" id="btnImportFile" class="btn-import-input" accept=".csv">
   </div>
 
@@ -1787,7 +1855,7 @@ function parseCSVLine(line) {
 }
 
 /* ── EXPORT ─────────────────────────────────────────────────────── */
-document.getElementById("btnExport").addEventListener("click", function () {
+document.getElementById("menuExport").addEventListener("click", function () {
 
   // Build timestamp: YYYY-MM-DD-HHmmss
   const now = new Date();
@@ -1963,6 +2031,58 @@ document.getElementById("btnImportFile").addEventListener("change", function (e)
     openImportDialog(parsed, conflicts);
   };
   reader.readAsText(file);
+});
+
+/* ── LOG MENU DROPDOWN ──────────────────────────────────────────── */
+const logMenuBtn      = document.getElementById("btnLogMenu");
+const logMenuDropdown = document.getElementById("logMenuDropdown");
+
+logMenuBtn.addEventListener("click", function(e) {
+  e.stopPropagation();
+  const isOpen = logMenuDropdown.classList.toggle("open");
+  logMenuBtn.classList.toggle("open", isOpen);
+});
+
+// Close when clicking anywhere outside
+document.addEventListener("click", function() {
+  logMenuDropdown.classList.remove("open");
+  logMenuBtn.classList.remove("open");
+});
+logMenuDropdown.addEventListener("click", function(e) { e.stopPropagation(); });
+
+document.getElementById("menuPrint").addEventListener("click", function() {
+  logMenuDropdown.classList.remove("open");
+  logMenuBtn.classList.remove("open");
+  window.print();
+});
+
+/* ── RESET ──────────────────────────────────────────────────────── */
+document.getElementById("menuReset").addEventListener("click", function() {
+  logMenuDropdown.classList.remove("open");
+  logMenuBtn.classList.remove("open");
+
+  const done = Object.values(SAVED_CHECKS).filter(Boolean).length;
+  const noted = Object.values(SAVED_NOTES).filter(v => v && v.trim()).length;
+
+  let msg = "Reset all observation data?\n\n";
+  if (done > 0)  msg += `  • ${done} object${done  > 1 ? "s" : ""} marked observed\n`;
+  if (noted > 0) msg += `  • ${noted} field note${noted > 1 ? "s" : ""}\n`;
+  if (done === 0 && noted === 0) msg += "  (no data currently recorded)\n";
+  msg += "\nThis cannot be undone.";
+
+  if (!confirm(msg)) return;
+
+  // Clear all data
+  Object.keys(SAVED_CHECKS).forEach(k => delete SAVED_CHECKS[k]);
+  Object.keys(SAVED_NOTES).forEach(k  => delete SAVED_NOTES[k]);
+  try {
+    localStorage.removeItem("mm_checks");
+    localStorage.removeItem("mm_notes");
+  } catch(e) {}
+
+  renderTable();
+  updateProgress();
+  applyFilter();
 });
 
 /* THEME */
