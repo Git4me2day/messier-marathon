@@ -4,7 +4,7 @@
 
 ## Mission Statement
 
-The Messier Marathon Observer's Log is a self-contained, offline-capable web tool built for amateur astronomers pursuing the Astronomical League's Messier Observing Program. Its purpose is to replace paper log sheets with a clean, distraction-free digital record that works in the field — including at dark sites with no internet connection — without requiring any app install, account, or subscription.
+The Messier Marathon Observer's Log is a self-contained, offline-capable web tool built for amateur astronomers pursuing the Astronomical League Messier Observing Program. Its purpose is to replace paper log sheets with a clean, distraction-free digital record that works in the field — including at dark sites with no internet connection — without requiring any app install, account, or subscription.
 
 The guiding principle is **utility without compromise on atmosphere**. The interface is designed to feel like a well-made star atlas: precise, purposeful, and visually at home under a red flashlight. Every design decision, from the night-vision colour palette to the monospaced coordinate columns, serves the observer first.
 
@@ -16,90 +16,99 @@ The guiding principle is **utility without compromise on atmosphere**. The inter
 The project began as a single HTML file containing all 110 Messier objects in marathon observation order, sourced from the standard Astronomical League sequence used by observers at the spring new moon window. The data array stores each object's Messier number, type, constellation, magnitude, J2000.0 coordinates, and Pocket Sky Atlas page reference.
 
 ### Design System
-A shared stylesheet (`mm-shared.css`) was developed to give the project a consistent visual identity across all pages. The design system is built entirely on CSS custom properties, enabling a full dark/light theme swap with a single attribute toggle on `<html>`. Two themes were developed in parallel:
+A shared stylesheet (`mm-shared.css`) gives the project a consistent visual identity across all pages, built entirely on CSS custom properties that enable a full dark/light theme swap with a single attribute toggle on `<html>`.
 
-- **Dark / Night mode** — deep black background (`#030305`), red-spectrum text and accents for night-vision preservation, subtle starfield texture, and a red glow on headings.
-- **Light / Day mode** — warm parchment atlas feel (`#f4ece0`), dark ink text, maroon accents. Suitable for planning sessions indoors.
+Two complete themes were developed in parallel:
+
+- **Dark / Night mode** — deep black background (`#030305`), red-spectrum text and accents for night-vision preservation, subtle starfield texture, red glow on headings.
+- **Light / Day mode** — warm parchment atlas feel (`#f4ece0`), dark ink, maroon accents. Suited for planning sessions indoors.
 
 Theme preference is saved to `localStorage` and restored on every page load without a flash of unstyled content.
 
 Typography uses three typefaces, all self-hosted from local `fonts/` files to eliminate any dependency on Google Fonts or external CDNs:
 
 - **Cinzel** — classical Roman capitals for headers and labels
-- **Share Tech Mono** — monospaced data columns and code
+- **Share Tech Mono** — monospaced data columns and coordinates
 - **Crimson Pro** — italic body copy and prose pages
 
 ### Core Observation Log (`index.html`)
-The main page provides the full 110-object table with the following features:
+The main page provides the full 110-object table with:
 
 - Marathon observation order (not Messier number order)
 - Per-object checkbox and free-text field notes, both persisted in `localStorage`
+- Automatic silent observation timestamp (ISO string) recorded when a checkbox is ticked; stored in `mm_times` and exposed only in the full record modal and CSV export
 - Animated progress bar tracking objects observed out of 110
-- Filter buttons: All / Galaxy / Open Cluster / Globular / Unobserved
+- Filter buttons: All / Galaxy / Open Cluster / Globular / Nebula / Unobserved
 - Live search filtering by object number, type, or constellation
-- Type colour-coded dot badges (11 types) with a legend panel
+- Type colour-coded dot badges (11 types) with a collapsible legend panel
 - Print stylesheet producing a clean black-on-white log sheet
 
 ### Image Lightbox
 Clicking any object row opens a modal overlay with:
 
-- Object image loaded from a local `images/` directory (`m1.jpg` … `m110.jpg`)
-- Attribution overlay fetched from a paired `images/m[n]-attrib.txt` file
+- Object image from local `images/M[n].jpg`
+- Attribution overlay fetched from `images/M[n]-attrib.txt`
 - Full object data in a right-hand sidebar
-- Sky chart links — Stellarium Web and Sky-Map.org (coordinate-linked)
-- Keyboard navigation (arrow keys, Escape), click-outside-to-dismiss
+- Local finder chart button linking to `charts/M[n].png`
+- Stellarium Web button (deep-linked by Messier name)
+- Keyboard navigation (arrow keys, Escape), click-outside-to-dismiss, prev/next footer controls
 
-Images are sourced from the SEDS Messier Catalog and are downloaded separately via a provided batch script. Attribution files are generated by a companion shell script (`create_attributions.sh`).
+### Log Menu
+A single **☰ Log ▼** dropdown replaces discrete buttons, keeping the toolbar clean:
+
+- ⎙ Print
+- ⬇ Export CSV / ⬆ Import CSV
+- ⬇ Export AL Records / ⬆ Import AL Records
+- ⚙ Session Setup…
+- ↺ Reset All Data…
+
+### CSV Export / Import
+Export produces a timestamped `YYYY-MM-DD-HHmmss-observing-log.csv` with all catalog fields, observed status, date observed (from the hidden timestamp), and field notes. All fields are quoted to handle embedded commas. Import parses by column header name (position-independent), detects conflicts, and presents an Overwrite / Merge choice before applying.
+
+### AL Observation Record Modal
+A small **✎** button at the right of every notes cell opens a full-screen modal with all fields required by the Astronomical League Messier Club program:
+
+- When & Where: date, time, observing site / location
+- Sky Conditions: seeing (Antoniadi 1–5), transparency (1–5), limiting magnitude
+- Equipment: telescope / instrument, aperture (mm), eyepiece, magnification
+- Observation: written description (required for AL certificate), sketch notes
+
+The ✎ icon is outlined (dim) when no record exists and renders as a solid filled red button when a record has been saved, giving an at-a-glance status across the full table. Description pre-populates from the brief field note if a full record is being created for the first time.
+
+### AL Records JSON Export / Import
+Full observation records are stored in `mm_fullnotes` (localStorage) and can be backed up independently of the CSV log. Export produces a timestamped `YYYY-MM-DD-HHmmss-al-records.json` with a version field and ISO export timestamp for forward compatibility. Import merges incoming records with existing ones, showing new-vs-conflict counts before confirming.
+
+### Session Setup
+A modal accessed via the Log menu allows the observer to set common defaults once at the start of each night — location, sky conditions, and equipment — that auto-fill blank fields in every observation record opened during the session. Existing saved data is never overwritten; session values only fill gaps.
+
+The **📍 Locate** button calls `navigator.geolocation` to get GPS coordinates from the device, then reverse-geocodes them to a human-readable place name via the OpenStreetMap Nominatim API (free, no API key required). Coordinates are stored in the session object alongside the place name. A pulsing **Session active** indicator pill appears in the toolbar while any session default is set. Session data is persisted in `mm_session` localStorage and survives page refreshes.
 
 ### Companion Pages
-- **FAQ (`faq.html`)** — answers common questions about the marathon sequence, the AL program requirements, how to use the log, and how localStorage works.
-- **CSS Cheat Sheet (`docs/css-cheatsheet.md`)** — internal developer reference documenting all shared CSS classes, colour variables, layout patterns, and the theme toggle implementation. Kept in `docs/` only; not linked from the public site.
-
-### Infrastructure
-- Fully self-contained single-directory deployment
-- No frameworks, no build tools, no server-side code
-- Fonts served locally from `fonts/` — no external CDN calls at runtime
-- GitHub Pages compatible — rename `messier_marathon.html` to `index.html` for clean URLs
-- All user data (checkboxes, notes, theme) stored in browser `localStorage` under keys `mm_checks`, `mm_notes`, and `mm_theme`
+- **FAQ (`faq.html`)** — answers common questions about the marathon sequence, AL program requirements, how to use the log, and how localStorage works.
+- **CSS Cheat Sheet (`docs/css-cheatsheet.md`)** — internal developer reference for all shared CSS classes, colour variables, layout patterns, and the theme toggle. Kept in `docs/` only; not deployed to the public site.
 
 ---
 
-## Planned Future Features
+## localStorage Keys
 
-### 1 · Full AL Observation Record Pages
-Each of the 110 objects would have its own dedicated page (e.g. `objects/m1.html`) providing a structured form for recording the complete set of notes required by the Astronomical League Messier Observing Program certificate. Fields would include:
+| Key | Contents |
+|-----|----------|
+| `mm_checks` | Observed state per object (object keyed by M-id) |
+| `mm_notes` | Brief field notes per object |
+| `mm_times` | ISO observation timestamp per object |
+| `mm_fullnotes` | Full AL record data per object (structured JSON) |
+| `mm_session` | Session defaults: location, sky conditions, equipment, lat/lon |
+| `mm_theme` | `"dark"` or `"light"` |
 
-- Date and time of observation
-- Observing site / location
-- Sky conditions (seeing, transparency, limiting magnitude)
-- Equipment used (telescope aperture, focal length, eyepiece, magnification)
-- Object description (size, shape, brightness, notable features)
-- Sketch area or sketch upload
-- AL-specific checklist items where applicable
+---
 
-The entry point to each object page would most naturally live in the **lightbox modal** — a "Full Record →" button in the sidebar or below the image, keeping the main table clean and fast for marathon night use. A secondary access point could be a small icon in the main table row.
+## Infrastructure
 
-All form data would be saved to `localStorage` keyed by object ID, consistent with the existing storage pattern.
-
-### 2 · Pre-Drawn Sky Charts
-Rather than linking out to live online tools (which require internet), each object page or lightbox panel could include a pre-generated finder chart — a static image showing a field of view centred on the object with nearby stars plotted to a suitable limiting magnitude. Options under consideration:
-
-- **Static images** generated offline using the existing `generate_charts.py` script (matplotlib, red-on-black night-vision style, gnomonic projection, 10–16° FOV)
-- **Embedded SVG charts** for resolution independence and smaller file size
-- Stored in `charts/m[n].svg` alongside the existing `images/` directory
-
-Charts would be accessible from both the lightbox sidebar and the full object record page. The lightbox might show a small thumbnail with a "Full Chart" expand option.
-
-### 3 · Export and Certificate Support
-- Export observed objects as a formatted PDF or printable HTML suitable for submitting to the AL for the Messier certificate
-- Auto-populate observer name, date range, and equipment from a one-time settings page
-- Generate a summary observation list in the format clubs typically require
-
-### 4 · Session Planner
-A lightweight planning view showing which objects are observable tonight based on the current date and a user-entered observing location (latitude/longitude). Would highlight objects in order of when they rise and set, and flag the critical western and eastern horizon objects that define the marathon window.
-
-### 5 · Multi-Device Sync (Optional / Advanced)
-Currently all data is local to one browser. A future option could allow export/import of the `localStorage` data as a JSON file, enabling backup and transfer between devices without requiring any server infrastructure.
+- No frameworks, no build tools, no server-side code
+- Fonts served locally from `fonts/` — no external CDN calls at runtime
+- Images and charts stored locally — works completely offline after first load
+- GitHub Pages deployment via `.github/workflows/deploy.yml`; only public-facing files are published, developer docs and scripts are excluded
+- Nominatim geolocation call is the only runtime network request (optional; gracefully skipped offline)
 
 ---
 
@@ -107,47 +116,38 @@ Currently all data is local to one browser. A future option could allow export/i
 
 ```
 /
-├── index.html              ← Main observation log (rename from messier_marathon.html)
-├── faq.html                ← Frequently asked questions
-├── mm-shared.css           ← Shared design system stylesheet
-├── README.md               ← GitHub repo overview and setup instructions
+├── index.html                    ← Main observation log
+├── faq.html                      ← Frequently asked questions
+├── mm-shared.css                 ← Shared design system stylesheet
+├── README.md                     ← GitHub repo overview and setup guide
+├── create_attributions.sh        ← Generates SEDS attribution .txt files
+├── generate_charts.py            ← Offline finder chart generator (matplotlib)
 ├── .gitignore
-├── fonts/                  ← Self-hosted typefaces (not tracked in git)
-│   ├── Cinzel-Regular.ttf
-│   ├── Cinzel-SemiBold.ttf
-│   ├── Cinzel-Bold.ttf
-│   ├── ShareTechMono-Regular.ttf
-│   ├── CrimsonPro-Light.ttf
-│   ├── CrimsonPro-Regular.ttf
-│   └── CrimsonPro-LightItalic.ttf
-├── images/                 ← Object photos (downloaded separately, not tracked in git)
-│   ├── m1.jpg … m110.jpg
-│   └── m1-attrib.txt … m110-attrib.txt
-└── docs/                   ← Internal developer documentation
-    ├── project-design-summary.md
-    └── css-cheatsheet.md
-```
-
-## Repository Structure (Planned)
-
-```
-/
-├── index.html
-├── faq.html
-├── mm-shared.css
-├── README.md
-├── .gitignore
-├── fonts/
-├── images/
-├── charts/                 ← Pre-generated finder charts (planned)
-│   └── m1.svg … m110.svg
-├── objects/                ← Full AL observation record pages (planned)
-│   └── m1.html … m110.html
-└── docs/
+├── .github/
+│   └── workflows/deploy.yml      ← GitHub Actions Pages deploy
+├── fonts/                        ← Self-hosted typefaces (not tracked in git)
+├── images/                       ← Object photos + attribution files (not tracked)
+├── charts/                       ← Finder chart PNGs M1–M110 (not tracked)
+└── docs/                         ← Internal developer documentation
     ├── project-design-summary.md
     └── css-cheatsheet.md
 ```
 
 ---
 
-*Last updated: 07 March 2026*
+## Remaining Open Items
+
+### Data Verification
+All 110 object coordinates in the DATA array should be cross-checked against an authoritative source (e.g. SEDS Messier catalogue or SIMBAD) to confirm RA/Dec accuracy and PSA page numbers.
+
+### Planned Future Features
+
+**Session Planner** — a lightweight view showing which objects are observable on a given night based on date and observer latitude, highlighting the critical western and eastern horizon objects that define the marathon window.
+
+**AL Certificate Export** — generate a formatted printable summary in the style clubs typically require for submission: observer name, date range, equipment, and a numbered observation list with descriptions.
+
+**Multi-page object records** — dedicated per-object pages (`objects/m1.html` … `objects/m110.html`) for a richer record view with larger sketch area, image zoom, and a direct link from the lightbox. Would be generated from a template rather than hand-authored.
+
+---
+
+*Last updated: March 2026*
