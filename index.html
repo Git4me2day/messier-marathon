@@ -2236,10 +2236,17 @@ function openRecModal(id, m, type) {
   document.getElementById("recTitleM").textContent    = m;
   document.getElementById("recTitleType").textContent = type;
 
-  // Populate fields from saved data, then fall back to session defaults for blank fields
+  // Populate fields from saved data, then fall back to session defaults for blank fields.
+  // For date and time, also fall back to the hidden observation timestamp (SAVED_TIMES)
+  // so the moment the checkbox was ticked is available as a starting point.
   const sess = SESSION;
-  document.getElementById("recDate").value         = saved.date         || "";
-  document.getElementById("recTime").value         = saved.time         || "";
+  // Priority: saved record value → checkbox timestamp → right now
+  // Date and time always get a value so the PDF report is never missing them.
+  const autoTs   = SAVED_TIMES[id] ? new Date(SAVED_TIMES[id]) : new Date();
+  const autoDate = autoTs.toLocaleDateString("en-CA");  // YYYY-MM-DD
+  const autoTime = autoTs.toTimeString().slice(0, 5);    // HH:MM
+  document.getElementById("recDate").value         = saved.date || autoDate;
+  document.getElementById("recTime").value         = saved.time || autoTime;
   document.getElementById("recSite").value         = saved.site         || sess.site         || "";
   document.getElementById("recSeeing").value       = saved.seeing       || sess.seeing       || "";
   document.getElementById("recTransparency").value = saved.transparency || sess.transparency || "";
@@ -2716,10 +2723,14 @@ document.getElementById("menuExportAL").addEventListener("click", function () {
   const stamp = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`
               + `-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
 
+  // Include the hidden observation timestamps so the PDF generator and any future
+  // tools can access the exact moment each object was checked off, even if the user
+  // never manually filled the date field in the full record form.
   const payload = {
-    exported: now.toISOString(),
-    version:  1,
-    records:  SAVED_FULLNOTES
+    exported:   now.toISOString(),
+    version:    1,
+    records:    SAVED_FULLNOTES,
+    timestamps: SAVED_TIMES       // mm_times: { "M1": "2026-03-22T02:15:00.000Z", ... }
   };
 
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
@@ -2769,8 +2780,14 @@ document.getElementById("btnImportALFile").addEventListener("change", function (
 
     if (!confirm(msg)) { e.target.value = ""; return; }
 
-    // Merge — incoming overwrites any conflicts
+    // Merge records — incoming overwrites any conflicts
     Object.assign(SAVED_FULLNOTES, incoming);
+
+    // Also restore observation timestamps if the file includes them
+    if (payload.timestamps && typeof payload.timestamps === "object") {
+      Object.assign(SAVED_TIMES, payload.timestamps);
+    }
+
     saveState();
 
     // Refresh all rec-btn indicators without full table re-render
