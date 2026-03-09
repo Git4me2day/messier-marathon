@@ -376,6 +376,7 @@ tr.checked td.col-m-val a.m-link { text-decoration: line-through; text-decoratio
   .legend-title, .legend-item { color: #444; }
   .progress-count { color: #800; }
 }
+.progress-wrap {
   display: flex;
   align-items: center;
   gap: 16px;
@@ -1366,6 +1367,8 @@ tr.checked td.col-m-val a.m-link {
   .theme-toggle-wrap { position: static; margin-bottom: 14px; }
 }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
 <div class="wrapper">
@@ -1424,6 +1427,9 @@ tr.checked td.col-m-val a.m-link {
         <label class="log-menu-item" for="btnImportALFile">
           <span class="log-menu-icon">⬆</span> Import AL Records
         </label>
+        <button class="log-menu-item" id="menuGenerateReport">
+          <span class="log-menu-icon">📄</span> Generate AL Report…
+        </button>
         <hr class="log-menu-divider">
         <button class="log-menu-item" id="menuSession">
           <span class="log-menu-icon">⚙</span> Session Setup…
@@ -1603,6 +1609,324 @@ tr.checked td.col-m-val a.m-link {
       <button class="import-btn cancel" id="importCancelBtn">Cancel</button>
       <button class="import-btn" id="importMergeBtn">Merge — keep existing where file is blank</button>
       <button class="import-btn primary" id="importOverwriteBtn">Overwrite — replace all with file data</button>
+    </div>
+  </div>
+</div>
+
+<!-- QUICK START GUIDE MODAL -->
+<style>
+/* ── Quick Start ── */
+.qs-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.82);
+  z-index: 5000;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+}
+.qs-overlay.open { display: flex; }
+.qs-box {
+  background: var(--modal-bg);
+  border: 1px solid var(--modal-border);
+  width: 100%;
+  max-width: 740px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  padding: 32px 32px 28px;
+}
+.qs-logo {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: .35em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  text-align: center;
+  margin-bottom: 8px;
+}
+.qs-title {
+  font-family: 'Cinzel', serif;
+  font-size: 20px;
+  letter-spacing: .12em;
+  color: var(--red-bright);
+  text-align: center;
+  margin-bottom: 6px;
+}
+.qs-tagline {
+  font-family: 'Crimson Pro', serif;
+  font-style: italic;
+  font-size: 14px;
+  color: var(--text-dim);
+  text-align: center;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border2);
+}
+.qs-modes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+@media (max-width: 560px) { .qs-modes { grid-template-columns: 1fr; } }
+.qs-mode {
+  border: 1px solid var(--border2);
+  padding: 18px 18px 14px;
+  background: var(--bg2);
+}
+.qs-mode-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.qs-mode-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+.qs-mode-title {
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--red-mid);
+}
+.qs-mode-sub {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: .1em;
+}
+.qs-mode p {
+  font-family: 'Crimson Pro', serif;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-sub);
+  margin: 0;
+}
+.qs-features {
+  margin-bottom: 24px;
+}
+.qs-features-title {
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+.qs-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 24px;
+}
+@media (max-width: 480px) { .qs-grid { grid-template-columns: 1fr; } }
+.qs-feat {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  font-family: 'Crimson Pro', serif;
+  font-size: 12.5px;
+  color: var(--text-sub);
+  line-height: 1.45;
+}
+.qs-feat-icon {
+  color: var(--red-dim);
+  flex-shrink: 0;
+  font-size: 13px;
+  margin-top: 1px;
+}
+.qs-feat strong {
+  color: var(--text-meta);
+  font-weight: 600;
+}
+.qs-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border2);
+  flex-wrap: wrap;
+}
+.qs-dont-show {
+  margin-right: auto;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  letter-spacing: .12em;
+  color: var(--text-dim);
+  cursor: pointer;
+  text-transform: uppercase;
+}
+.qs-dont-show input { cursor: pointer; accent-color: var(--red-mid); }
+.qs-guide-link {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--red-mid);
+  text-decoration: none;
+  border: 1px solid var(--border2);
+  padding: 7px 14px;
+  transition: all .2s;
+}
+.qs-guide-link:hover { border-color: var(--border3); color: var(--red-bright); background: var(--filter-active-bg); }
+</style>
+
+<div class="qs-overlay" id="qsOverlay" role="dialog" aria-modal="true" aria-label="Quick Start Guide">
+  <div class="qs-box">
+    <div class="qs-logo">Messier Marathon Observer's Log</div>
+    <div class="qs-title">Welcome — Quick Start</div>
+    <div class="qs-tagline">Choose how you plan to use this log. You can do both — many observers start casual and add full records over time.</div>
+
+    <div class="qs-modes">
+      <div class="qs-mode">
+        <div class="qs-mode-header">
+          <span class="qs-mode-icon">☑</span>
+          <div>
+            <div class="qs-mode-title">Casual Messier Checklist</div>
+            <div class="qs-mode-sub">Just track what you've seen</div>
+          </div>
+        </div>
+        <p>Check off objects as you observe them, jot a brief note in the inline field, and watch the progress bar advance. The log remembers everything between sessions. Use the <strong>🌙 Night Mode</strong> toggle (top right) at the telescope to preserve your dark adaptation — red text on near-black causes no eye strain.</p>
+        <p style="margin-top:8px">When you're done, export your log as a CSV from the <strong>☰ Log</strong> menu.</p>
+      </div>
+      <div class="qs-mode">
+        <div class="qs-mode-header">
+          <span class="qs-mode-icon">🏅</span>
+          <div>
+            <div class="qs-mode-title">AL Messier Certificate</div>
+            <div class="qs-mode-sub">Full records for award submission</div>
+          </div>
+        </div>
+        <p>Click the <strong>✎</strong> button on any object to open the full observation record — date, time, site, seeing, transparency, limiting magnitude, telescope, eyepiece, and a written description. The red-filled ✎ icon shows at a glance which records are complete.</p>
+        <p style="margin-top:8px">Before an observing session, use <strong>☰ Log → Session Setup</strong> to set location and equipment once — those values auto-fill every record you open that night. When ready, generate your submission PDF from the Log menu.</p>
+      </div>
+    </div>
+
+    <div class="qs-features">
+      <div class="qs-features-title">At a Glance</div>
+      <div class="qs-grid">
+        <div class="qs-feat"><span class="qs-feat-icon">🌙</span><span><strong>Night / Day toggle</strong> — Red-on-black for the telescope; warm parchment for planning indoors</span></div>
+        <div class="qs-feat"><span class="qs-feat-icon">⚙</span><span><strong>Session Setup</strong> — Set location (with GPS), sky conditions &amp; equipment once per night</span></div>
+        <div class="qs-feat"><span class="qs-feat-icon">✎</span><span><strong>Full AL Records</strong> — All fields required for the AL Messier Club certificate, per object</span></div>
+        <div class="qs-feat"><span class="qs-feat-icon">📄</span><span><strong>AL Report PDF</strong> — One-click formatted PDF ready for club submission</span></div>
+        <div class="qs-feat"><span class="qs-feat-icon">🖼</span><span><strong>Image Lightbox</strong> — Photo, catalog data, finder chart and Stellarium link per object</span></div>
+        <div class="qs-feat"><span class="qs-feat-icon">💾</span><span><strong>Auto-save</strong> — Everything saves instantly to your browser; nothing sent to any server</span></div>
+      </div>
+    </div>
+
+    <div class="qs-footer">
+      <label class="qs-dont-show">
+        <input type="checkbox" id="qsDontShow"> Don't show again
+      </label>
+      <a class="qs-guide-link" href="docs/user-guide.html" target="_blank" rel="noopener">📖 Open User Guide</a>
+      <button class="rec-save-btn" id="qsDismissBtn">Get Started →</button>
+    </div>
+  </div>
+</div>
+
+<!-- AL REPORT GENERATOR MODAL -->
+<style>
+.rpt-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--modal-overlay);
+  z-index: 4000;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+}
+.rpt-overlay.open { display: flex; }
+.rpt-box {
+  background: var(--modal-bg);
+  border: 1px solid var(--modal-border);
+  width: 100%;
+  max-width: 540px;
+  padding: 28px 28px 24px;
+  position: relative;
+}
+.rpt-title {
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--red-bright);
+  margin-bottom: 6px;
+}
+.rpt-subtitle {
+  font-family: 'Crimson Pro', serif;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-bottom: 22px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border2);
+}
+.rpt-close {
+  position: absolute;
+  top: 16px; right: 16px;
+  width: 30px; height: 30px;
+  background: transparent;
+  border: 1px solid var(--border2);
+  color: var(--text-meta);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+}
+.rpt-close:hover { border-color: var(--border3); color: var(--red-bright); }
+.rpt-status {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: .1em;
+  color: var(--red-mid);
+  min-height: 16px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border2);
+}
+.rpt-status.err { color: #c05030; }
+.rpt-footer {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+</style>
+
+<div class="rpt-overlay" id="rptOverlay" role="dialog" aria-modal="true" aria-label="Generate AL Report">
+  <div class="rpt-box">
+    <div class="rpt-title">📄 Generate AL Report</div>
+    <div class="rpt-subtitle">Produces a formatted PDF of all saved full observation records, ready for AL Messier Club certificate submission.</div>
+    <button class="rpt-close" id="rptClose">✕</button>
+
+    <div class="rec-section">Report Details</div>
+    <div class="rec-grid" style="margin-bottom:0">
+      <div class="rec-field">
+        <label class="rec-label">Observer Name</label>
+        <input class="rec-input" type="text" id="rptObserver" placeholder="Your full name">
+      </div>
+      <div class="rec-field">
+        <label class="rec-label">Club / Location (optional)</label>
+        <input class="rec-input" type="text" id="rptSubtitle" placeholder="e.g. Chatham Astronomical Society">
+      </div>
+    </div>
+
+    <div class="rpt-status" id="rptStatus"></div>
+
+    <div class="rpt-footer">
+      <button class="rec-cancel-btn" id="rptCancelBtn">Cancel</button>
+      <button class="rec-save-btn"   id="rptGenerateBtn">Generate PDF</button>
     </div>
   </div>
 </div>
@@ -2257,9 +2581,20 @@ function openRecModal(id, m, type) {
   document.getElementById("recMag").value          = saved.mag          || sess.mag          || "";
   document.getElementById("recSketch").value       = saved.sketch       || "";
 
-  // Pre-populate description from brief notes if full record is empty
+  // Field Notes ↔ Description two-way sync logic:
+  //
+  // On OPEN — Field Notes is the inbound source of truth:
+  //   • If Field Notes has text  → always seed Description from it
+  //     (covers both: first-time entry, and subsequent opens after the
+  //      user manually edits the inline note between sessions)
+  //   • If Field Notes is blank  → fall back to any previously saved
+  //     description so existing work is never lost
+  //
+  // On SAVE (handled in saveRecModal) — Description is the outbound
+  // source of truth → always written back to Field Notes.
+  const fieldNote = (SAVED_NOTES[id] || "").trim();
   document.getElementById("recDescription").value =
-    saved.description || SAVED_NOTES[id] || "";
+    fieldNote || saved.description || "";
 
   // Show hidden observation timestamp if it exists
   const ts = SAVED_TIMES[id];
@@ -2303,6 +2638,24 @@ function saveRecModal() {
   const hasData = Object.values(SAVED_FULLNOTES[recCurrentId]).some(v => v && v.trim());
   if (!hasData) {
     delete SAVED_FULLNOTES[recCurrentId];
+  }
+
+  // Sync Description back to Field Notes so the inline note always reflects
+  // the most recent description text:
+  //   • If Field Notes was blank on open → it now gets populated from the description
+  //   • If Field Notes had text on open  → it gets replaced with the updated description
+  // Either way the two fields stay in sync after every save.
+  const descNow = document.getElementById("recDescription").value.trim();
+  if (descNow) {
+    SAVED_NOTES[recCurrentId] = descNow;
+    // Also update the visible note-input in the table row without re-rendering.
+    // The note-input has no data-id, but its sibling rec-btn does — use that to
+    // find the correct row and then walk to the input.
+    const recBtnEl = document.querySelector(`.rec-btn[data-id="${recCurrentId}"]`);
+    if (recBtnEl) {
+      const noteEl = recBtnEl.closest(".note-cell-wrap").querySelector(".note-input");
+      if (noteEl) noteEl.value = descNow;
+    }
   }
 
   saveState();
@@ -3032,6 +3385,539 @@ try { const t = localStorage.getItem("mm_theme"); if (t) setTheme(t); } catch(e)
 renderTable();
 updateProgress();
 updateSessionIndicator();
+/* ══════════════════════════════════════════════════════════════════
+   QUICK START GUIDE
+═══════════════════════════════════════════════════════════════════ */
+(function () {
+  const VISITED_KEY = "mm_visited";
+  const overlay    = document.getElementById("qsOverlay");
+  const dismissBtn = document.getElementById("qsDismissBtn");
+  const dontShow   = document.getElementById("qsDontShow");
+
+  // The Quick Start is always shown in Day (light) mode so it's
+  // easy to read as a first-time welcome screen. We record the
+  // user's current theme and restore it on dismiss.
+  let themeBeforeQS = null;
+
+  function openQS() {
+    themeBeforeQS = document.documentElement.getAttribute("data-theme") || "dark";
+    setTheme("light");   // force readable day mode for the guide
+    overlay.classList.add("open");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeQS() {
+    if (dontShow.checked) {
+      try { localStorage.setItem(VISITED_KEY, "1"); } catch(e) {}
+    }
+    overlay.classList.remove("open");
+    document.body.style.overflow = "";
+    // Restore the theme that was active before the guide opened
+    if (themeBeforeQS) setTheme(themeBeforeQS);
+  }
+
+  dismissBtn.addEventListener("click", closeQS);
+  overlay.addEventListener("click", function(e) {
+    if (e.target === this) closeQS();
+  });
+  document.addEventListener("keydown", function(e) {
+    if (e.key === "Escape" && overlay.classList.contains("open")) closeQS();
+  });
+
+  // Show on first visit: none of the data keys and no visited flag
+  function isFirstVisit() {
+    try {
+      if (localStorage.getItem(VISITED_KEY)) return false;
+      const dataKeys = ["mm_checks","mm_notes","mm_times","mm_fullnotes"];
+      return dataKeys.every(k => !localStorage.getItem(k));
+    } catch(e) { return false; }
+  }
+
+  if (isFirstVisit()) openQS();
+})();
+
+/* ══════════════════════════════════════════════════════════════════
+   AL REPORT PDF GENERATOR  (jsPDF + autotable)
+═══════════════════════════════════════════════════════════════════ */
+(function () {
+
+  // ── Colour palette (matches Python script) ──────────────────────
+  const C = {
+    darkBg:   [26,  10,  0],
+    maroon:   [139, 42,  16],
+    redMid:   [192, 64,  42],
+    redLight: [232, 96,  74],
+    cream:    [250, 244, 236],
+    ruleLine: [200, 160, 112],
+    lightBand:[240, 228, 208],
+    midBand:  [224, 205, 176],
+    textDark: [26,  15,  8],
+    textMeta: [106, 74,  48],
+    white:    [255, 255, 255],
+  };
+
+  // ── Seeing / transparency labels ────────────────────────────────
+  const SEEING = { "1":"I – Perfect","2":"II – Slight undulations",
+    "3":"III – Moderate","4":"IV – Poor","5":"V – Very bad" };
+  const TRANS  = { "5":"5 – Excellent","4":"4 – Good",
+    "3":"3 – Average","2":"2 – Poor","1":"1 – Very poor" };
+
+  // ── Build catalog lookup from DATA array ────────────────────────
+  function buildCatalog() {
+    const map = {};
+    const typeMap = {
+      "Spiral Gal":    "Spiral Galaxy",
+      "Elliptical Gal":"Elliptical Galaxy",
+      "Lenticular Gal":"Lenticular Galaxy",
+      "Irregular Gal": "Irregular Galaxy",
+      "Open Cluster":  "Open Cluster",
+      "Globular Clust":"Globular Cluster",
+      "Diffuse Neb":   "Diffuse Nebula",
+      "Planetary Neb": "Planetary Nebula",
+      "Supernova Rem": "Supernova Remnant",
+      "Star Cloud":    "Star Cloud",
+      "Double Star":   "Double Star",
+      "Asterism":      "Asterism",
+    };
+    DATA.forEach(function(row) {
+      const id = row[1].replace(/\s/g,"");
+      map[id] = {
+        order: row[0],
+        type:  typeMap[row[2]] || row[2],
+        con:   row[3],
+        mag:   row[4],
+        ra:    row[5],
+        dec:   row[6],
+        psa:   row[7],
+      };
+    });
+    return map;
+  }
+
+  // ── Date formatting ─────────────────────────────────────────────
+  function fmtDate(d) {
+    if (!d) return "";
+    try {
+      const p = d.split("-");
+      const dt = new Date(+p[0], +p[1]-1, +p[2]);
+      return dt.toLocaleDateString("en-US", {year:"numeric",month:"long",day:"numeric"});
+    } catch(e) { return d; }
+  }
+
+  function dateRange(records) {
+    const dates = [];
+    Object.values(records).forEach(function(r) {
+      if (r.date) try { dates.push(new Date(r.date)); } catch(e){}
+    });
+    if (!dates.length) return "";
+    const mn = new Date(Math.min.apply(null,dates));
+    const mx = new Date(Math.max.apply(null,dates));
+    const fmt = function(d) { return d.toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"}); };
+    return mn.toDateString()===mx.toDateString() ? fmt(mn) : fmt(mn)+" — "+fmt(mx);
+  }
+
+  // ── PDF helpers ─────────────────────────────────────────────────
+  function rgb(arr) { return { r:arr[0], g:arr[1], b:arr[2] }; }
+
+  function headerBand(doc, observerName) {
+    const pw = doc.internal.pageSize.getWidth();
+    const ph = doc.internal.pageSize.getHeight();
+    doc.setFillColor(...C.darkBg);
+    doc.rect(0, 0, pw, 11, "F");
+    doc.setFont("helvetica","bold");
+    doc.setFontSize(8);
+    doc.setTextColor(...C.white);
+    doc.text("Astronomical League — Messier Club Observation Record", 15, 7);
+    if (observerName) {
+      doc.setFont("helvetica","normal");
+      doc.text(observerName, pw - 15, 7, {align:"right"});
+    }
+  }
+
+  function footerLine(doc) {
+    const pw = doc.internal.pageSize.getWidth();
+    const ph = doc.internal.pageSize.getHeight();
+    doc.setDrawColor(...C.ruleLine);
+    doc.setLineWidth(0.3);
+    doc.line(15, ph - 12, pw - 15, ph - 12);
+    doc.setFont("helvetica","normal");
+    doc.setFontSize(7);
+    doc.setTextColor(...C.textMeta);
+    const now = new Date().toISOString().slice(0,10);
+    doc.text(
+      "Page " + doc.internal.getNumberOfPages() + "  ·  Generated " + now,
+      pw / 2, ph - 7, {align:"center"}
+    );
+  }
+
+  function addPage(doc, observerName) {
+    doc.addPage();
+    headerBand(doc, observerName);
+    footerLine(doc);
+  }
+
+  // ── Cover page ──────────────────────────────────────────────────
+  function buildCover(doc, observerName, subtitle, records) {
+    const pw = doc.internal.pageSize.getWidth();
+    const ph = doc.internal.pageSize.getHeight();
+
+    // Dark top band
+    doc.setFillColor(...C.darkBg);
+    doc.rect(0, 0, pw, 42, "F");
+    doc.setFillColor(...C.maroon);
+    doc.rect(0, 42, pw, 2.5, "F");
+
+    // Title block
+    doc.setFont("helvetica","bold");
+    doc.setFontSize(10);
+    doc.setTextColor(...C.ruleLine);
+    doc.text("MESSIER CLUB", pw/2, 18, {align:"center"});
+    doc.setFontSize(22);
+    doc.setTextColor(...C.white);
+    doc.text("Observation Record", pw/2, 31, {align:"center"});
+
+    // Subtitle / observer
+    let y = 60;
+    if (observerName) {
+      doc.setFont("helvetica","bold");
+      doc.setFontSize(13);
+      doc.setTextColor(...C.textDark);
+      doc.text(observerName, pw/2, y, {align:"center"});
+      y += 8;
+    }
+    if (subtitle) {
+      doc.setFont("helvetica","italic");
+      doc.setFontSize(10);
+      doc.setTextColor(...C.textMeta);
+      doc.text(subtitle, pw/2, y, {align:"center"});
+      y += 8;
+    }
+
+    // Divider
+    doc.setDrawColor(...C.ruleLine);
+    doc.setLineWidth(0.5);
+    doc.line(pw*0.2, y+2, pw*0.8, y+2);
+    y += 12;
+
+    // Stats table
+    const nRec = Object.keys(records).length;
+    const nDesc = Object.values(records).filter(r => r.description && r.description.trim()).length;
+    const dr = dateRange(records);
+    const rows = [
+      ["Objects with full records", String(nRec)],
+      ["Objects with descriptions", String(nDesc)],
+    ];
+    if (dr) rows.push(["Observation dates", dr]);
+    rows.push(["Generated", new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})]);
+    rows.push(["Submitted for", "AL Messier Club Observing Certificate"]);
+
+    doc.autoTable({
+      startY: y,
+      body: rows,
+      theme: "plain",
+      margin: {left: pw*0.15, right: pw*0.15},
+      styles: { fontSize:9, cellPadding:3 },
+      columnStyles: {
+        0: { textColor: C.textMeta, fontStyle:"bold", cellWidth: 68 },
+        1: { textColor: C.textDark },
+      },
+      alternateRowStyles: { fillColor: C.cream },
+    });
+
+    // Bottom band
+    doc.setFillColor(...C.darkBg);
+    doc.rect(0, ph-14, pw, 14, "F");
+    doc.setFillColor(...C.maroon);
+    doc.rect(0, ph-14, pw, 1.5, "F");
+    doc.setFont("helvetica","normal");
+    doc.setFontSize(7);
+    doc.setTextColor(...C.ruleLine);
+    doc.text("astronomicalleague.net", pw/2, ph-5, {align:"center"});
+  }
+
+  // ── Index table ─────────────────────────────────────────────────
+  function buildIndex(doc, records, catalog, observerName) {
+    addPage(doc, observerName);
+    const pw = doc.internal.pageSize.getWidth();
+
+    doc.setFont("helvetica","bold");
+    doc.setFontSize(14);
+    doc.setTextColor(...C.textDark);
+    doc.text("Observation Index", pw/2, 22, {align:"center"});
+    doc.setDrawColor(...C.ruleLine);
+    doc.setLineWidth(0.4);
+    doc.line(15, 25, pw-15, 25);
+
+    // Sort by Messier number
+    const sorted = Object.keys(records).sort(function(a,b) {
+      return (parseInt(a.slice(1))||999) - (parseInt(b.slice(1))||999);
+    });
+
+    const rows = sorted.map(function(id) {
+      const rec = records[id];
+      const cat = catalog[id] || {};
+      const scope = rec.scope || "";
+      const apt   = rec.aperture ? scope + (scope?" / ":"") + rec.aperture+"mm" : scope;
+      return [
+        id,
+        cat.type || "—",
+        cat.con  || "—",
+        fmtDate(rec.date) || "—",
+        rec.site ? rec.site.substring(0,28)+(rec.site.length>28?"…":"") : "—",
+        SEEING[rec.seeing] ? rec.seeing : (rec.seeing||"—"),
+        rec.transparency || "—",
+        rec.limitMag || "—",
+        apt.substring(0,30)+(apt.length>30?"…":"") || "—",
+      ];
+    });
+
+    doc.autoTable({
+      startY: 29,
+      head: [["Object","Type","Con.","Date","Site","See.","Trans.","Lim.","Scope / Aperture"]],
+      body: rows,
+      theme: "grid",
+      headStyles: {
+        fillColor: C.midBand,
+        textColor: C.textDark,
+        fontStyle: "bold",
+        fontSize: 7,
+        cellPadding: 2.5,
+      },
+      styles: { fontSize:7, cellPadding:2, textColor:C.textDark },
+      alternateRowStyles: { fillColor: C.lightBand },
+      columnStyles: {
+        0: { fontStyle:"bold", cellWidth:14 },
+        1: { cellWidth:28 },
+        2: { cellWidth:14 },
+        3: { cellWidth:28 },
+        4: { cellWidth:30 },
+        5: { cellWidth:10, halign:"center" },
+        6: { cellWidth:11, halign:"center" },
+        7: { cellWidth:11, halign:"center" },
+        8: { cellWidth:"auto" },
+      },
+      margin: {top:29, left:15, right:15},
+      didDrawPage: function(data) {
+        headerBand(doc, observerName);
+        footerLine(doc);
+      },
+    });
+  }
+
+  // ── Individual record pages ──────────────────────────────────────
+  function buildRecord(doc, id, rec, cat, observerName) {
+    addPage(doc, observerName);
+    const pw = doc.internal.pageSize.getWidth();
+    let y = 18;
+
+    // Object heading band
+    doc.setFillColor(...C.lightBand);
+    doc.rect(0, y-1, pw, 13, "F");
+    doc.setFillColor(...C.maroon);
+    doc.rect(0, y+12, pw, 0.8, "F");
+
+    doc.setFont("helvetica","bold");
+    doc.setFontSize(16);
+    doc.setTextColor(...C.darkBg);
+    doc.text(id, 15, y+9);
+
+    const typeStr = (cat.type||"") + "  ·  " + (cat.con||"") + "  ·  Mag " + (cat.mag||"—");
+    doc.setFont("helvetica","normal");
+    doc.setFontSize(8);
+    doc.setTextColor(...C.redMid);
+    doc.text(typeStr, 36, y+6);
+
+    if (cat.order) {
+      doc.setFont("helvetica","italic");
+      doc.setFontSize(7.5);
+      doc.text("Marathon #" + cat.order, pw-15, y+9, {align:"right"});
+    }
+    y += 18;
+
+    // ── Section helper ───────────────────────────────────────────
+    function section(title) {
+      doc.setFont("helvetica","bold");
+      doc.setFontSize(7.5);
+      doc.setTextColor(...C.maroon);
+      const tw = doc.getTextWidth(title.toUpperCase());
+      doc.text(title.toUpperCase(), 15, y);
+      doc.setDrawColor(...C.ruleLine);
+      doc.setLineWidth(0.3);
+      doc.line(15 + tw + 3, y-0.5, pw-15, y-0.5);
+      y += 5;
+    }
+
+    // ── Field row helper ─────────────────────────────────────────
+    function fieldRow(pairs) {
+      // pairs: [[label, value], ...]  up to 4 across
+      const colW = (pw - 30) / pairs.length;
+      pairs.forEach(function(pair, i) {
+        const x = 15 + i * colW;
+        doc.setFont("helvetica","bold");
+        doc.setFontSize(7);
+        doc.setTextColor(...C.textMeta);
+        doc.text(pair[0], x, y);
+        doc.setFont("helvetica","normal");
+        doc.setFontSize(8.5);
+        doc.setTextColor(...C.textDark);
+        const val = String(pair[1]||"—");
+        const maxW = colW - 4;
+        const lines = doc.splitTextToSize(val, maxW);
+        doc.text(lines[0], x, y+5);
+      });
+      y += 12;
+    }
+
+    // ── When & Where ─────────────────────────────────────────────
+    section("When & Where");
+    const dateStr = fmtDate(rec.date);
+    const timeStr = rec.time || "";
+    const whenStr = [dateStr, timeStr].filter(Boolean).join(" at ") || "—";
+    fieldRow([["Date / Time", whenStr], ["RA (J2000)", cat.ra||"—"], ["Dec (J2000)", cat.dec||"—"]]);
+    fieldRow([["Observing Site", rec.site||"—"], ["PSA Page", cat.psa||"—"], ["Magnitude", cat.mag||"—"]]);
+    y += 2;
+
+    // ── Sky Conditions ───────────────────────────────────────────
+    section("Sky Conditions");
+    fieldRow([
+      ["Seeing (Antoniadi)", SEEING[rec.seeing]||rec.seeing||"—"],
+      ["Transparency",       TRANS[rec.transparency]||rec.transparency||"—"],
+      ["Limiting Magnitude", rec.limitMag||"—"],
+    ]);
+    y += 2;
+
+    // ── Equipment ────────────────────────────────────────────────
+    section("Equipment");
+    fieldRow([["Telescope / Instrument", rec.scope||"—"], ["Aperture (mm)", rec.aperture||"—"]]);
+    fieldRow([["Eyepiece", rec.eyepiece||"—"], ["Magnification", rec.mag||"—"]]);
+    y += 2;
+
+    // ── Description ──────────────────────────────────────────────
+    section("Observation Description");
+    const desc = (rec.description || "").trim() || "(No description recorded)";
+    doc.setFont("helvetica","normal");
+    doc.setFontSize(9);
+    doc.setTextColor(...C.textDark);
+    const descLines = doc.splitTextToSize(desc, pw - 30);
+    doc.text(descLines, 15, y);
+    y += descLines.length * 4.5 + 4;
+
+    // ── Sketch Notes ─────────────────────────────────────────────
+    if (rec.sketch && rec.sketch.trim()) {
+      section("Sketch Notes");
+      doc.setFont("helvetica","italic");
+      doc.setFontSize(8.5);
+      doc.setTextColor(...C.textMeta);
+      const skLines = doc.splitTextToSize(rec.sketch.trim(), pw - 30);
+      doc.text(skLines, 15, y);
+    }
+
+    // Bottom rule
+    const ph = doc.internal.pageSize.getHeight();
+    doc.setDrawColor(...C.ruleLine);
+    doc.setLineWidth(0.3);
+    doc.line(15, ph - 20, pw - 15, ph - 20);
+  }
+
+  // ── Main generate function ────────────────────────────────────
+  function generateReport(observerName, subtitle) {
+    const statusEl = document.getElementById("rptStatus");
+
+    // Check jsPDF loaded
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+      statusEl.textContent = "Error: PDF library not loaded. Check your internet connection and reload the page.";
+      statusEl.className = "rpt-status err";
+      return;
+    }
+
+    const records = SAVED_FULLNOTES;
+    const nRec = Object.keys(records).length;
+
+    if (nRec === 0) {
+      statusEl.textContent = "No full AL records found. Fill in at least one record using the ✎ button.";
+      statusEl.className = "rpt-status err";
+      return;
+    }
+
+    statusEl.textContent = "Generating…";
+    statusEl.className = "rpt-status";
+
+    // Small delay so the browser renders the status message before the heavy work
+    setTimeout(function() {
+      try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ orientation:"portrait", unit:"mm", format:"letter" });
+        const catalog = buildCatalog();
+
+        // Cover
+        buildCover(doc, observerName, subtitle, records);
+        footerLine(doc);
+
+        // Index
+        buildIndex(doc, records, catalog, observerName);
+
+        // Individual records sorted by M number
+        const sorted = Object.keys(records).sort(function(a,b) {
+          return (parseInt(a.slice(1))||999) - (parseInt(b.slice(1))||999);
+        });
+        sorted.forEach(function(id) {
+          buildRecord(doc, id, records[id], catalog[id]||{}, observerName);
+        });
+
+        // Save
+        const now = new Date();
+        const pad = function(n){ return String(n).padStart(2,"0"); };
+        const stamp = now.getFullYear()+"-"+pad(now.getMonth()+1)+"-"+pad(now.getDate())
+                    + "-"+pad(now.getHours())+pad(now.getMinutes())+pad(now.getSeconds());
+        doc.save(stamp + "-al-report.pdf");
+
+        statusEl.textContent = "✓  PDF saved — " + nRec + " record" + (nRec!==1?"s":"") + " included.";
+        statusEl.className = "rpt-status";
+      } catch(err) {
+        statusEl.textContent = "Error generating PDF: " + err.message;
+        statusEl.className = "rpt-status err";
+        console.error(err);
+      }
+    }, 80);
+  }
+
+  // ── Report modal wiring ──────────────────────────────────────
+  const rptOverlay = document.getElementById("rptOverlay");
+
+  function openReportModal() {
+    // Pre-fill observer from session if available
+    const obsEl = document.getElementById("rptObserver");
+    if (!obsEl.value && SESSION && SESSION.site) {
+      document.getElementById("rptSubtitle").value = SESSION.site;
+    }
+    document.getElementById("rptStatus").textContent = "";
+    document.getElementById("rptStatus").className = "rpt-status";
+    rptOverlay.classList.add("open");
+    document.body.style.overflow = "hidden";
+    obsEl.focus();
+  }
+
+  function closeReportModal() {
+    rptOverlay.classList.remove("open");
+    document.body.style.overflow = "";
+  }
+
+  document.getElementById("menuGenerateReport").addEventListener("click", function() {
+    logMenuDropdown.classList.remove("open");
+    logMenuBtn.classList.remove("open");
+    openReportModal();
+  });
+  document.getElementById("rptClose").addEventListener("click", closeReportModal);
+  document.getElementById("rptCancelBtn").addEventListener("click", closeReportModal);
+  rptOverlay.addEventListener("click", function(e) { if (e.target===this) closeReportModal(); });
+  document.getElementById("rptGenerateBtn").addEventListener("click", function() {
+    const observer = document.getElementById("rptObserver").value.trim();
+    const subtitle = document.getElementById("rptSubtitle").value.trim();
+    generateReport(observer, subtitle);
+  });
+
+})();
+
 </script>
 </body>
 </html>
