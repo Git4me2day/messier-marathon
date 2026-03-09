@@ -20,12 +20,12 @@ A shared stylesheet (`mm-shared.css`) gives the project a consistent visual iden
 
 Two complete themes were developed in parallel:
 
-- **Dark / Night mode** — deep black background (`#030305`), red-spectrum text and accents for night-vision preservation, subtle starfield texture, red glow on headings.
+- **Dark / Night mode** — deep black background (`#030305`), red-spectrum text and accents for night-vision preservation.
 - **Light / Day mode** — warm parchment atlas feel (`#f4ece0`), dark ink, maroon accents. Suited for planning sessions indoors.
 
 Theme preference is saved to `localStorage` and restored on every page load without a flash of unstyled content.
 
-Typography uses three typefaces, all self-hosted from local `fonts/` files to eliminate any dependency on Google Fonts or external CDNs:
+Typography uses three typefaces, all self-hosted from local `fonts/` files:
 
 - **Cinzel** — classical Roman capitals for headers and labels
 - **Share Tech Mono** — monospaced data columns and coordinates
@@ -35,12 +35,13 @@ Typography uses three typefaces, all self-hosted from local `fonts/` files to el
 The main page provides the full 110-object table with:
 
 - Marathon observation order (not Messier number order)
+- Header subtitle: *Observation Log & AL Certificate Record*
 - Per-object checkbox and free-text field notes, both persisted in `localStorage`
-- Automatic silent observation timestamp (ISO string) recorded when a checkbox is ticked; stored in `mm_times` and exposed only in the full record modal and CSV export
+- Automatic silent observation timestamp (ISO string) recorded when a checkbox is ticked; stored in `mm_times`
 - Animated progress bar tracking objects observed out of 110
 - Filter buttons: All / Galaxy / Open Cluster / Globular / Nebula / Unobserved
 - Live search filtering by object number, type, or constellation
-- Type colour-coded dot badges (11 types) with a collapsible legend panel
+- Type colour-coded dot badges (11 types) with a legend panel
 - Print stylesheet producing a clean black-on-white log sheet
 
 ### Image Lightbox
@@ -54,16 +55,17 @@ Clicking any object row opens a modal overlay with:
 - Keyboard navigation (arrow keys, Escape), click-outside-to-dismiss, prev/next footer controls
 
 ### Log Menu
-A single **☰ Log ▼** dropdown replaces discrete buttons, keeping the toolbar clean:
+A single **☰ Log ▼** dropdown keeps the toolbar clean:
 
 - ⎙ Print
 - ⬇ Export CSV / ⬆ Import CSV
 - ⬇ Export AL Records / ⬆ Import AL Records
+- 📄 Generate AL Report…
 - ⚙ Session Setup…
 - ↺ Reset All Data…
 
 ### CSV Export / Import
-Export produces a timestamped `YYYY-MM-DD-HHmmss-observing-log.csv` with all catalog fields, observed status, date observed (from the hidden timestamp), and field notes. All fields are quoted to handle embedded commas. Import parses by column header name (position-independent), detects conflicts, and presents an Overwrite / Merge choice before applying.
+Export produces a timestamped `YYYY-MM-DD-HHmmss-observing-log.csv` with all catalog fields, observed status, date observed (from the hidden timestamp), and field notes. Import parses by column header name (position-independent), detects conflicts, and presents an Overwrite / Merge choice before applying.
 
 ### AL Observation Record Modal
 A small **✎** button at the right of every notes cell opens a full-screen modal with all fields required by the Astronomical League Messier Club program:
@@ -73,19 +75,52 @@ A small **✎** button at the right of every notes cell opens a full-screen moda
 - Equipment: telescope / instrument, aperture (mm), eyepiece, magnification
 - Observation: written description (required for AL certificate), sketch notes
 
-The ✎ icon is outlined (dim) when no record exists and renders as a solid filled red button when a record has been saved, giving an at-a-glance status across the full table. Description pre-populates from the brief field note if a full record is being created for the first time.
+The ✎ icon is outlined (dim) when no record exists and renders as a solid filled red button when a record has been saved.
+
+**Field Notes ↔ Description sync:** when opening the modal, Field Notes text always seeds the Description field (overriding any previously saved description), so the inline note is always the inbound source of truth. On save, the Description is written back to Field Notes and to the visible table cell, keeping both fields in sync through every open/save cycle.
 
 ### AL Records JSON Export / Import
-Full observation records are stored in `mm_fullnotes` (localStorage) and can be backed up independently of the CSV log. Export produces a timestamped `YYYY-MM-DD-HHmmss-al-records.json` with a version field and ISO export timestamp for forward compatibility. Import merges incoming records with existing ones, showing new-vs-conflict counts before confirming.
+Full observation records are stored in `mm_fullnotes` (localStorage) and can be backed up independently of the CSV log. Export produces a timestamped `YYYY-MM-DD-HHmmss-al-records.json` with a version field and ISO export timestamp. Import merges incoming records with existing ones, showing new-vs-conflict counts before confirming.
+
+### In-Browser AL Report PDF Generator
+Accessed via **☰ Log → Generate AL Report…**, this feature uses jsPDF and jspdf-autotable (loaded from cdnjs) to generate a complete submission-ready PDF entirely in the browser — no server, no Python required.
+
+A small setup dialog collects observer name and optional club/subtitle. The generated PDF contains:
+
+1. **Cover page** — dark header band, title, observer name, subtitle, summary statistics (record count, date range, generation date)
+2. **Observation Index** — compact one-row-per-object table
+3. **One page per record** — When & Where, Sky Conditions, Equipment, Observation Description + Sketch Notes, formatted for AL submission
+
+Filename format: `YYYY-MM-DD-HHmmss-al-report.pdf`. A standalone Python version (`al_report.py`) is also available for command-line generation.
 
 ### Session Setup
-A modal accessed via the Log menu allows the observer to set common defaults once at the start of each night — location, sky conditions, and equipment — that auto-fill blank fields in every observation record opened during the session. Existing saved data is never overwritten; session values only fill gaps.
+A modal accessed via the Log menu allows the observer to set common defaults once at the start of each night — location, sky conditions, and equipment — that auto-fill blank fields in every observation record opened during the session. Existing saved data is never overwritten.
 
-The **📍 Locate** button calls `navigator.geolocation` to get GPS coordinates from the device, then reverse-geocodes them to a human-readable place name via the OpenStreetMap Nominatim API (free, no API key required). Coordinates are stored in the session object alongside the place name. A pulsing **Session active** indicator pill appears in the toolbar while any session default is set. Session data is persisted in `mm_session` localStorage and survives page refreshes.
+The **📍 Locate** button calls `navigator.geolocation`, then reverse-geocodes via OpenStreetMap Nominatim (free, no API key). A pulsing **Session active** indicator pill appears in the toolbar while any session default is set. Session data is persisted in `mm_session` localStorage.
+
+### Quick Start Guide
+On the first visit to the site (detected by the absence of all `mm_*` data keys and the `mm_visited` flag), a modal overlay opens automatically presenting:
+
+- The two use cases: **Casual Messier Checklist** and **AL Messier Certificate**
+- A six-item feature summary grid
+- A "Don't show again" checkbox (sets `mm_visited` on dismiss)
+- A link to the full User Guide
+
+The guide is always presented in Day mode regardless of the user's current theme preference; the original theme is restored on dismiss.
 
 ### Companion Pages
-- **FAQ (`faq.html`)** — answers common questions about the marathon sequence, AL program requirements, how to use the log, and how localStorage works.
-- **CSS Cheat Sheet (`docs/css-cheatsheet.md`)** — internal developer reference for all shared CSS classes, colour variables, layout patterns, and the theme toggle. Kept in `docs/` only; not deployed to the public site.
+
+| Page | Purpose |
+|------|---------|
+| `faq.html` | Common questions about the marathon, AL program, and how to use the log |
+| `docs/user-guide.html` | Full HTML user guide — use cases, every feature, tables, notes, AL program reference. Matches site aesthetic with the same fonts, theme toggle, and shared CSS. |
+| `resources.html` | Curated external links — SEDS, NASA Hubble, AL program, Deep Sky Watch, AstroPixels, marathon planners, printable logbooks, and a featured video. Styled as a resource directory matching the site design. |
+| `docs/css-cheatsheet.md` | Internal developer reference — CSS classes, colour variables, layout patterns. Not deployed to the public site. |
+
+All prose pages share `mm-shared.css`, the same `@font-face` declarations, the theme toggle, and `mm_theme` localStorage persistence.
+
+### Footer Navigation
+All pages carry a consistent footer nav linking between: **← Back to Log · FAQ · User Guide · Resources**. Paths are adjusted for each page's location in the directory tree.
 
 ---
 
@@ -93,12 +128,13 @@ The **📍 Locate** button calls `navigator.geolocation` to get GPS coordinates 
 
 | Key | Contents |
 |-----|----------|
-| `mm_checks` | Observed state per object (object keyed by M-id) |
-| `mm_notes` | Brief field notes per object |
+| `mm_checks` | Observed state per object (keyed by M-id) |
+| `mm_notes` | Brief field notes per object (synced with AL description on save) |
 | `mm_times` | ISO observation timestamp per object |
 | `mm_fullnotes` | Full AL record data per object (structured JSON) |
 | `mm_session` | Session defaults: location, sky conditions, equipment, lat/lon |
 | `mm_theme` | `"dark"` or `"light"` |
+| `mm_visited` | Set to `"1"` when user ticks "Don't show again" in Quick Start |
 
 ---
 
@@ -107,8 +143,9 @@ The **📍 Locate** button calls `navigator.geolocation` to get GPS coordinates 
 - No frameworks, no build tools, no server-side code
 - Fonts served locally from `fonts/` — no external CDN calls at runtime
 - Images and charts stored locally — works completely offline after first load
-- GitHub Pages deployment via `.github/workflows/deploy.yml`; only public-facing files are published, developer docs and scripts are excluded
-- Nominatim geolocation call is the only runtime network request (optional; gracefully skipped offline)
+- jsPDF + jspdf-autotable loaded from cdnjs for in-browser PDF generation (requires network on first load)
+- GitHub Pages deployment via `.github/workflows/deploy.yml`; only public-facing files are published
+- Nominatim geolocation call is the only other runtime network request (optional; gracefully skipped offline)
 
 ---
 
@@ -118,8 +155,10 @@ The **📍 Locate** button calls `navigator.geolocation` to get GPS coordinates 
 /
 ├── index.html                    ← Main observation log
 ├── faq.html                      ← Frequently asked questions
+├── resources.html                ← Curated external resource links
 ├── mm-shared.css                 ← Shared design system stylesheet
 ├── README.md                     ← GitHub repo overview and setup guide
+├── al_report.py                  ← Standalone PDF report generator (Python / ReportLab)
 ├── create_attributions.sh        ← Generates SEDS attribution .txt files
 ├── generate_charts.py            ← Offline finder chart generator (matplotlib)
 ├── .gitignore
@@ -128,9 +167,11 @@ The **📍 Locate** button calls `navigator.geolocation` to get GPS coordinates 
 ├── fonts/                        ← Self-hosted typefaces (not tracked in git)
 ├── images/                       ← Object photos + attribution files (not tracked)
 ├── charts/                       ← Finder chart PNGs M1–M110 (not tracked)
-└── docs/                         ← Internal developer documentation
-    ├── project-design-summary.md
-    └── css-cheatsheet.md
+└── docs/                         ← Documentation
+    ├── user-guide.html           ← Full user guide (public-facing)
+    ├── features.md               ← Feature reference (internal)
+    ├── project-design-summary.md ← This file (internal)
+    └── css-cheatsheet.md         ← CSS developer reference (internal)
 ```
 
 ---
@@ -144,9 +185,11 @@ All 110 object coordinates in the DATA array should be cross-checked against an 
 
 **Session Planner** — a lightweight view showing which objects are observable on a given night based on date and observer latitude, highlighting the critical western and eastern horizon objects that define the marathon window.
 
-**AL Certificate Export** — generate a formatted printable summary in the style clubs typically require for submission: observer name, date range, equipment, and a numbered observation list with descriptions.
+**Equipment & Site Profiles** — named presets for Session Setup stored in `mm_profiles` localStorage, so regular observers can switch between home and dark-site configurations without re-entering equipment details.
 
-**Multi-page object records** — dedicated per-object pages (`objects/m1.html` … `objects/m110.html`) for a richer record view with larger sketch area, image zoom, and a direct link from the lightbox. Would be generated from a template rather than hand-authored.
+**Observation Statistics Dashboard** — mines `mm_times` and `mm_fullnotes` for charts and summaries: objects per session, type breakdown, seeing distribution, session timeline.
+
+**Observation Notes History** — keep the last 2–3 versions of the description with timestamps, so edits can be reviewed or reverted.
 
 ---
 

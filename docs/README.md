@@ -9,30 +9,45 @@ A beautifully designed, fully self-contained observation log for the **Messier M
 
 ---
 
+## Two Use Cases
+
+| Use Case | What you need | How it works |
+|----------|--------------|--------------|
+| **Casual Messier Checklist** | Just track what you've seen | Check objects off, add brief notes, export CSV when done |
+| **AL Messier Certificate** | Full records for award submission | Fill the ✎ form per object, use Session Setup to pre-fill equipment, generate a PDF report for your club coordinator |
+
+---
+
 ## Features
 
 - **Red night-vision mode** — deep black background with full red-spectrum text to preserve dark adaptation; toggle to warm parchment day mode for planning indoors
 - **110 Messier objects** in optimal marathon search order, west to east
 - **Per-object checkboxes and field notes** — persisted in `localStorage` across sessions
-- **Automatic observation timestamp** — silently recorded when you check an object; never clutters the notes field
+- **Automatic observation timestamp** — silently recorded when you check an object
 - **Progress bar** — live count of observed vs. total objects
 - **Filter and search** — filter by Galaxy / Open Cluster / Globular / Nebula / Unobserved; search by M#, type, or constellation
 - **Image lightbox** — click any M# to open the object photo, full data sidebar, local finder chart, and Stellarium Web link
-- **Full AL observation records** — per-object form with all Astronomical League required fields; accessible via the ✎ button in the notes column
-- **Session Setup** — set common defaults once per night and have them auto-fill every new record; includes device geolocation
-- **Log menu** — Print, Export CSV, Import CSV, Export AL Records (JSON), Import AL Records (JSON), Session Setup, Reset All Data
+- **Full AL observation records** — per-object form (✎ button) with all AL-required fields; solid red icon when a record is saved
+- **Field Notes ↔ Description sync** — notes seed the AL description on open; description writes back to notes on save
+- **In-browser AL Report PDF** — generates a complete formatted submission PDF via the Log menu; no Python required
+- **Session Setup** — set location and equipment once per night; auto-fills every new record; includes GPS locate
+- **Quick Start Guide** — shown on first visit, explains the two use cases and links to the User Guide
+- **Log menu** — Print, Export CSV, Import CSV, Export AL Records (JSON), Import AL Records (JSON), Generate AL Report, Session Setup, Reset All Data
+- **Resources page** — curated links to databases, observing guides, marathon planners, and logbooks
 
 ---
 
 ## Quick Start
 
 ```
-index.html          ← open this in any modern browser
-faq.html            ← frequently asked questions
-mm-shared.css       ← shared stylesheet (must be alongside index.html)
-fonts/              ← self-hosted typefaces (see Fonts section below)
-images/             ← optional object photos
-charts/             ← optional local finder charts
+index.html              ← open this in any modern browser
+faq.html                ← frequently asked questions
+resources.html          ← external resource links
+mm-shared.css           ← shared stylesheet (must be alongside index.html)
+docs/user-guide.html    ← full user guide
+fonts/                  ← self-hosted typefaces (see Fonts section below)
+images/                 ← optional object photos
+charts/                 ← optional local finder charts
 ```
 
 No server, no build step, no dependencies.
@@ -57,7 +72,7 @@ Typography is self-hosted — no Google Fonts or CDN calls at runtime. Download 
 
 ## Adding Photos
 
-Place JPEGs in an `images/` folder named with an uppercase M (`M1.jpg` … `M110.jpg`).
+Place JPEGs in an `images/` folder named `M1.jpg` … `M110.jpg`.
 
 ```bash
 # Linux / macOS — wget
@@ -95,7 +110,7 @@ python generate_charts.py
 
 All user data is managed via **☰ Log** in the toolbar.
 
-**Observation Log (CSV)** — exports `YYYY-MM-DD-HHmmss-observing-log.csv` with marathon order, object, catalog data, observed status, observation timestamp, and field notes. On import you choose Overwrite or Merge.
+**Observation Log (CSV)** — exports `YYYY-MM-DD-HHmmss-observing-log.csv` with marathon order, catalog data, observed status, observation timestamp, and field notes. On import choose Overwrite or Merge.
 
 **AL Records (JSON)** — exports `YYYY-MM-DD-HHmmss-al-records.json` with all full observation records. Import merges with existing records and shows a conflict count before confirming.
 
@@ -110,7 +125,25 @@ Click **✎** in any object's notes cell to open the full record form:
 - **Equipment** — telescope, aperture, eyepiece, magnification
 - **Observation** — written description (required for AL certificate), sketch notes
 
-The ✎ icon is outlined when empty and fills solid red when a record is saved.
+The ✎ icon is outlined when empty and fills solid red when a record is saved. The description field is always seeded from Field Notes on open, and written back to Field Notes on save.
+
+---
+
+## AL Report PDF
+
+**☰ Log → Generate AL Report…** builds a complete submission PDF in the browser:
+
+1. **Cover page** — title, observer name, club / location, summary statistics
+2. **Observation Index** — one-row-per-object table
+3. **Individual record pages** — one full page per saved record
+
+Saved as `YYYY-MM-DD-HHmmss-al-report.pdf`. A Python command-line version is also available:
+
+```bash
+pip install reportlab
+python al_report.py --records al-records.json \
+  --observer "Your Name" --subtitle "Your Club" --output report.pdf
+```
 
 ---
 
@@ -125,11 +158,12 @@ The ✎ icon is outlined when empty and fills solid red when a record is saved.
 | Key | Contents |
 |-----|----------|
 | `mm_checks` | Observed state per object |
-| `mm_notes` | Brief field notes per object |
+| `mm_notes` | Brief field notes per object (synced with AL description) |
 | `mm_times` | ISO timestamp of each observation |
 | `mm_fullnotes` | Full AL record data per object |
 | `mm_session` | Current session defaults |
 | `mm_theme` | `"dark"` or `"light"` |
+| `mm_visited` | Set when "Don't show again" is ticked in Quick Start |
 
 ---
 
@@ -139,13 +173,13 @@ The ✎ icon is outlined when empty and fills solid red when a record is saved.
 2. Push to GitHub
 3. **Settings → Pages → Source → GitHub Actions**
 
-The included `.github/workflows/deploy.yml` publishes only public-facing files — developer docs, scripts, and the CSS cheat sheet are excluded from the live site.
+The included `.github/workflows/deploy.yml` publishes only public-facing files. Internal docs (`features.md`, `project-design-summary.md`, `css-cheatsheet.md`) and scripts are excluded from the live site. `docs/user-guide.html` **is** published.
 
 ---
 
 ## Browser Compatibility
 
-Chrome, Firefox, Safari, and Edge (current versions). Requires `localStorage`. Geolocation requires HTTPS or `localhost`.
+Chrome, Firefox, Safari, and Edge (current versions). Requires `localStorage`. Geolocation requires HTTPS or `localhost`. The in-browser PDF generator requires the jsPDF library to load from cdnjs on first use.
 
 ---
 
@@ -157,6 +191,7 @@ Chrome, Firefox, Safari, and Edge (current versions). Requires `localStorage`. G
 - Sky simulation: [Stellarium Web](https://stellarium-web.org)
 - Reverse geocoding: [OpenStreetMap Nominatim](https://nominatim.openstreetmap.org)
 - Object photos: [SEDS Messier Catalog](http://www.messier.seds.org) (optional, downloaded separately)
+- In-browser PDF: [jsPDF](https://github.com/parallax/jsPDF) + [jspdf-autotable](https://github.com/simonbengtsson/jsPDF-AutoTable)
 
 ---
 

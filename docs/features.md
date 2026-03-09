@@ -6,12 +6,22 @@
 
 ## What Is This?
 
-The Messier Marathon Observer's Log is a free, browser-based tool for amateur astronomers observing the 110 objects in the Messier catalogue. It serves two purposes:
+The Messier Marathon Observer's Log is a free, browser-based tool for amateur astronomers observing the 110 objects in the Messier catalogue. It is designed around two use cases:
 
-1. **Marathon night** — a fast, red-light-friendly checklist for the annual Messier Marathon, where observers attempt all 110 objects in a single night.
-2. **AL Messier Club program** — a structured observation record for earning the Astronomical League's Messier Observing Program certificate.
+1. **Casual Messier Checklist** — a fast, red-light-friendly checklist for tracking which objects you have seen, with optional brief notes. No forms to fill in. Check, note, done.
+2. **AL Messier Certificate** — a structured observation record for earning the Astronomical League Messier Club certificate. Per-object forms capture every required field; a one-click PDF generates your submission document.
 
 Nothing is installed. Nothing is sent to a server. All data lives in your browser.
+
+---
+
+## Quick Start Guide
+
+On your very first visit — before any observations are recorded — the site opens a **Quick Start Guide** modal automatically. It explains the two use cases above, summarises the key features at a glance, and links to the full User Guide.
+
+- **"Don't show again"** checkbox — tick it before dismissing to suppress the guide on future visits. Leave it unticked and the guide will reappear on any browser where no data exists yet.
+- The guide is always displayed in **Day mode** (warm parchment) for easy reading, then restores whichever theme was active before you opened it.
+- The full User Guide is always accessible at `docs/user-guide.html`, linked in the footer of every page.
 
 ---
 
@@ -21,8 +31,8 @@ The site opens in **dark / night mode** by default: a near-black background with
 
 A pill-shaped toggle in the top-right corner switches between:
 
-- 🌙 **Dark mode** — red-on-black, for use at the telescope
-- ☀ **Light mode** — dark ink on warm parchment, for planning indoors
+- 🌙 **Night mode** — red-on-black, for use at the telescope
+- ☀ **Day mode** — dark ink on warm parchment, for planning indoors
 
 Your preference is remembered between visits.
 
@@ -73,10 +83,19 @@ Filters and search combine — e.g. "Globular" filter + "Sgr" in the search show
 
 Every object has a **checkbox** and a **notes field** in the same row.
 
-- Check the box when you've seen the object. The row dims slightly and the progress bar advances.
-- Type anything in the notes field — time of observation, eyepiece used, sky conditions, a quick impression.
-- Both are saved automatically to browser storage and survive page refreshes, browser restarts, and computer reboots. You never need to click Save.
-- When you check an object, an **observation timestamp** is silently recorded in the background. It appears in the full observation record and in CSV exports, but never clutters the table.
+- Check the box when you have seen the object. The row dims slightly and the progress bar advances.
+- Type anything in the notes field — eyepiece used, sky conditions, a quick impression.
+- Both are saved automatically to browser storage and survive page refreshes and browser restarts. You never need to click Save.
+- When you check an object, an **observation timestamp** is silently recorded. It appears in the full observation record and in CSV exports, but never clutters the table.
+
+### Field Notes ↔ AL Description sync
+
+The Field Notes field and the Description field in the full AL record are kept in sync automatically:
+
+- **Opening the AL record** — if Field Notes has text, it seeds the Description field so you are not starting from scratch. If Field Notes is blank, the previously saved description (if any) is restored.
+- **Saving the AL record** — the Description is written back to Field Notes so the inline note always reflects your latest written observation.
+
+This means you can type a quick shorthand note in the field at the telescope, then expand it properly in the AL record form later — and the table will update to show the full text when you save.
 
 ---
 
@@ -106,33 +125,17 @@ For each object, a **✎** button sits at the right edge of the notes cell.
 - **Outlined** (dim) — no full record saved yet
 - **Filled red** — a full record has been saved for this object
 
-Click it to open the full observation record form. This captures everything the Astronomical League requires for the Messier Club observing certificate:
+Click it to open the full observation record form capturing everything the AL requires:
 
-**When & Where**
-- Date of observation
-- Time (local)
-- Observing site / location (can be filled automatically — see Session Setup)
+**When & Where** — date, time, observing site (pre-filled from observation timestamp and Session Setup)
 
-**Sky Conditions**
-- Seeing on the Antoniadi scale (1 Perfect → 5 Very bad)
-- Transparency (1 Very poor → 5 Excellent)
-- Limiting magnitude
+**Sky Conditions** — seeing (Antoniadi 1–5), transparency (1–5), limiting magnitude
 
-**Equipment**
-- Telescope or instrument description
-- Aperture in millimetres
-- Eyepiece
-- Magnification
+**Equipment** — telescope / instrument, aperture (mm), eyepiece, magnification
 
-**Observation**
-- Written description of what you saw — size, shape, brightness, structure, whether averted vision was needed, etc. This field is required for the AL certificate.
-- Sketch notes — orientation, field stars noted, anything relevant to a sketch made at the eyepiece
+**Observation** — written description (required for AL certificate), sketch notes
 
-If you have brief notes already typed in the table, they are pre-filled into the description field when you open an empty record, so you are not starting from scratch.
-
-The hidden observation timestamp is displayed at the bottom of the modal for reference.
-
-All full records are saved automatically to browser storage under the key `mm_fullnotes`.
+The hidden observation timestamp is displayed at the bottom of the modal for reference. All full records are saved automatically to `mm_fullnotes`.
 
 ---
 
@@ -140,123 +143,85 @@ All full records are saved automatically to browser storage under the key `mm_fu
 
 At the start of each observing session, open **☰ Log → Session Setup** to enter shared defaults that will auto-fill blank fields in every observation record you open that night.
 
-Fields you can set as session defaults:
+Fields available as session defaults: observing site, seeing, transparency, limiting magnitude, telescope / instrument, aperture, eyepiece, magnification.
 
-- Observing site / location
-- Seeing
-- Transparency
-- Limiting magnitude
-- Telescope / instrument
-- Aperture
-- Eyepiece
-- Magnification
+Session values only fill gaps — any field with existing saved data is never overwritten.
 
-**How auto-fill works:** when you open an object's full record, any field that already has saved data is left exactly as-is. Only blank fields are filled from the session. This means you can freely override the default for any individual object without affecting the session.
+**📍 Locate button** — requests GPS from the device, then reverse-geocodes to a place name via OpenStreetMap Nominatim (free, no API key). Raw coordinates are also stored in the session.
 
-**📍 Locate button** — requests your GPS position from the device (browser permission required; works over HTTPS or localhost). Once coordinates are obtained, the site calls OpenStreetMap's free reverse-geocoding service to convert them to a human-readable place name, which is filled into the Site field if it is empty. The raw coordinates are also stored in the session for reference.
-
-A pulsing **Session active** indicator appears in the toolbar whenever any session default is set, so you always know the auto-fill is running. Use **↺ Clear Session** in the modal to remove all defaults without affecting any saved records.
-
-Session data is stored in `mm_session` localStorage and survives page refreshes.
+A pulsing **Session active** indicator appears in the toolbar while any default is set. **↺ Clear Session** removes all defaults without affecting saved records.
 
 ---
 
 ## The Log Menu
 
-A single **☰ Log ▼** button in the toolbar opens a dropdown with all data management options:
+A single **☰ Log ▼** button opens a dropdown with all data management options:
 
 | Item | What it does |
 |------|--------------|
-| ⎙ Print | Opens the browser print dialog with a clean black-on-white stylesheet applied — no red backgrounds, no wasted ink |
-| ⬇ Export CSV | Saves a complete observation log as a CSV file |
-| ⬆ Import CSV | Loads a previously exported CSV back in |
-| ⬇ Export AL Records | Saves all full observation records as a JSON file |
-| ⬆ Import AL Records | Loads a previously exported JSON file back in |
+| ⎙ Print | Opens the browser print dialog with a clean black-on-white stylesheet |
+| ⬇ Export CSV | Saves a complete observation log as a timestamped CSV |
+| ⬆ Import CSV | Loads a previously exported CSV; Merge or Overwrite choice |
+| ⬇ Export AL Records | Saves all full observation records as a timestamped JSON |
+| ⬆ Import AL Records | Loads a previously exported JSON; conflict count shown before confirming |
+| 📄 Generate AL Report… | Generates a formatted multi-page submission PDF in the browser |
 | ⚙ Session Setup… | Opens the session defaults modal |
-| ↺ Reset All Data… | Clears everything with a confirmation dialog |
+| ↺ Reset All Data… | Clears all data with a confirmation dialog |
 
 ---
 
-## CSV Export and Import
+## AL Report PDF Generator
 
-**Export** produces a file named `YYYY-MM-DD-HHmmss-observing-log.csv` containing one row per Messier object with these columns:
+**☰ Log → Generate AL Report…** opens a small dialog where you enter your name and an optional club / location subtitle. Clicking **Generate PDF** produces a complete multi-page PDF in the browser — no internet connection needed — and saves it as `YYYY-MM-DD-HHmmss-al-report.pdf`.
 
-Marathon Order · Object · Type · Constellation · Magnitude · RA (J2000) · Dec (J2000) · PSA Page · Observed · Date Observed · Field Notes
+The PDF contains three sections:
 
-The Date Observed column is populated from the hidden observation timestamp — it shows the exact moment you ticked the checkbox.
+1. **Cover page** — title, observer name, subtitle, summary statistics (record count, date range)
+2. **Observation Index** — one compact row per object
+3. **Individual record pages** — one full page per saved record with all four sections in a formatted layout ready for submission
 
-**Import** reads a CSV exported from this page (or any CSV with matching column headers — column order doesn't matter). Before applying the data, you are shown:
-
-- How many objects are in the file
-- Which objects would overwrite existing observations or notes (conflicts)
-
-You then choose:
-- **Cancel** — do nothing
-- **Merge** — import only fills in blanks; existing data is untouched
-- **Overwrite** — incoming data replaces everything
-
----
-
-## AL Records JSON Export and Import
-
-**Export** produces a file named `YYYY-MM-DD-HHmmss-al-records.json` containing all of your full observation records in a structured format, with a version number and export timestamp for forward compatibility.
-
-**Import** reads a previously exported JSON file. You are shown how many records are in the file and how many would overwrite existing records, then asked to confirm. Incoming records are merged with (and overwrite) existing ones. After import, the ✎ button indicators refresh immediately across the whole table.
-
-This is the recommended way to back up your full records, move them between devices, or hand them off to someone else.
+A standalone Python version (`al_report.py`) is also available in the repository.
 
 ---
 
 ## Resetting Data
 
-**☰ Log → Reset All Data…** shows a count of how many observations and notes you have saved before asking you to confirm. Confirmed reset clears all six `mm_*` localStorage keys:
-
-`mm_checks` · `mm_notes` · `mm_times` · `mm_fullnotes` · `mm_session` · `mm_theme`
-
-This is permanent and cannot be undone — export your data first if you want to keep it.
+**☰ Log → Reset All Data…** shows a count of saved data before asking to confirm. Clears all `mm_*` localStorage keys permanently — export first.
 
 ---
 
 ## Browser Storage
 
-All user data is stored in your browser's **localStorage** — a small private database that persists between sessions on the same device and browser. Nothing is transmitted anywhere.
-
 | Key | Contents |
 |-----|----------|
 | `mm_checks` | Which objects you have observed |
-| `mm_notes` | Your brief field notes |
+| `mm_notes` | Brief field notes (kept in sync with AL description) |
 | `mm_times` | Timestamps of each observation |
-| `mm_fullnotes` | Your full AL observation records |
+| `mm_fullnotes` | Full AL observation records |
 | `mm_session` | Current session defaults |
-| `mm_theme` | Dark or light mode preference |
-
-Data is tied to the specific browser and device. To move data to another device, use Export / Import.
-
-Clearing your browser's site data or using private/incognito mode will erase localStorage. Export your data regularly if it matters to you.
-
----
-
-## Printing
-
-**☰ Log → Print** applies a print stylesheet that:
-
-- Renders everything in black ink on white paper
-- Hides the toolbar, filters, search, and modal overlays
-- Preserves the full table including any notes you have typed
-- Fits cleanly on standard paper sizes
-
-Use your browser's print-to-PDF option to save a snapshot of your log.
+| `mm_theme` | Night or day mode preference |
+| `mm_visited` | Set when "Don't show again" is ticked in the Quick Start guide |
 
 ---
 
 ## Works Offline
 
-After the page has loaded once, the core tool — table, checkboxes, notes, full record forms, lightbox, and all data management — works entirely without an internet connection. The only features that require network access are:
+After first load, the entire tool works without internet: table, checkboxes, notes, full record forms, lightbox, AL Report PDF generation, CSV/JSON export and import, and printing.
 
-- **📍 Locate** (geolocation place-name lookup via OpenStreetMap)
-- **🔭 Stellarium Web** (external link)
+Features that require network access: **📍 Locate** (OpenStreetMap), **🔭 Stellarium Web** (external link), and the jsPDF library on first load.
 
-Local finder charts, object photos, and all saved data work completely offline.
+---
+
+## Site Pages
+
+| Page | Purpose |
+|------|---------|
+| `index.html` | Main observation log |
+| `faq.html` | Frequently asked questions |
+| `docs/user-guide.html` | Full in-depth user guide |
+| `resources.html` | Curated external links |
+
+All pages share the theme toggle, font system, and `mm_theme` preference.
 
 ---
 

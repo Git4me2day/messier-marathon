@@ -289,6 +289,8 @@
 
   <p class="guide-body">This log is designed to serve two kinds of observers. You can use it for one, the other, or both — many observers start casual and add full records as their interest in the AL program grows.</p>
 
+  <p class="guide-body">When you open the site for the first time, a <strong>Quick Start Guide</strong> appears automatically explaining both use cases and linking to this page. Tick <strong>"Don't show again"</strong> before dismissing it to suppress it on future visits, or leave it unticked to see it again on any browser where no data has been saved yet.</p>
+
   <div class="use-case-grid">
     <div class="use-case-card">
       <div class="use-case-card-header">
@@ -368,6 +370,8 @@
   </div>
 
   <p class="guide-body">Checking an object dims its row, advances the progress bar, and silently records the exact timestamp of the observation. This timestamp flows into the full AL record and the CSV export as "Date Observed." Unchecking removes it.</p>
+
+  <p class="guide-body"><strong>Field Notes ↔ AL Description sync:</strong> the inline Field Notes field and the Description field in the full AL record modal are kept in sync automatically. When you open the AL record, any text in Field Notes seeds the Description so you are never starting from scratch. When you save the AL record, the Description is written back to Field Notes so the table always shows your latest observation text. You can type a shorthand note at the telescope and expand it properly in the AL form later — the table cell updates when you save.</p>
 
 
   <!-- ══════════════════════════════════════════
@@ -509,6 +513,7 @@
         <tr><td>mm_fullnotes</td><td>Full AL record data per object (structured JSON)</td></tr>
         <tr><td>mm_session</td><td>Current session defaults including GPS coordinates</td></tr>
         <tr><td>mm_theme</td><td>Night or day mode preference</td></tr>
+        <tr><td>mm_visited</td><td>Set to "1" when "Don't show again" is ticked in the Quick Start guide</td></tr>
       </tbody>
     </table>
   </div>
@@ -545,6 +550,29 @@
   <p class="guide-body">After the page has loaded once, the following all work without internet: the full table, filtering, search, progress bar, checkboxes, notes, full AL record forms, image lightbox (with local images and charts), CSV and JSON export / import, AL Report PDF generation, and printing.</p>
 
   <p class="guide-body">The only features that require internet: <strong>📍 Locate</strong> (reverse geocoding via OpenStreetMap) and <strong>🔭 Stellarium Web</strong> (external site). Both degrade gracefully — Locate shows an error message; Stellarium simply doesn't open.</p>
+
+
+  <!-- ══════════════════════════════════════════
+       SITE PAGES
+  ═══════════════════════════════════════════ -->
+  <div class="faq-section-title">Site Pages</div>
+  <hr class="guide-section-rule">
+
+  <p class="guide-body">The log is a small family of pages, all sharing the same fonts, theme toggle, and design system.</p>
+
+  <div class="guide-table-wrap">
+    <table class="guide-table">
+      <thead><tr><th>Page</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td>index.html</td><td>Main observation log — the tool itself</td></tr>
+        <tr><td>faq.html</td><td>Common questions about the Messier Marathon, AL program, and how the log works</td></tr>
+        <tr><td>docs/user-guide.html</td><td>This page</td></tr>
+        <tr><td>resources.html</td><td>Curated external links — databases, observing guides, marathon planners, and printable logbooks</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="guide-body">All pages carry a footer nav: <strong>← Back to Log · FAQ · User Guide · Resources</strong>.</p>
 
 
   <!-- ══════════════════════════════════════════
